@@ -138,6 +138,22 @@ public static class ScanTargets
             foreach (var t in browserTargets) yield return t;
         }
 
+        // ── Rastros do usuário (arquivos recentes, jump lists, prefetch) ────
+        yield return new Target(Path.Combine(roaming, "Microsoft", "Windows", "Recent"),
+            ScanCategory.UserTraces, RiskLevel.Low, "Atalhos de arquivos recentes");
+
+        var autoDest = Path.Combine(roaming, "Microsoft", "Windows", "Recent", "AutomaticDestinations");
+        if (Directory.Exists(autoDest))
+            yield return new Target(autoDest, ScanCategory.UserTraces, RiskLevel.Low, "Jump lists automáticas");
+
+        var customDest = Path.Combine(roaming, "Microsoft", "Windows", "Recent", "CustomDestinations");
+        if (Directory.Exists(customDest))
+            yield return new Target(customDest, ScanCategory.UserTraces, RiskLevel.Low, "Jump lists personalizadas");
+
+        yield return new Target(Path.Combine(windir, "Prefetch"),
+            ScanCategory.UserTraces, RiskLevel.Medium, "Cache de inicialização de programas (exige administrador)",
+            RequiresAdmin: true);
+
         yield return new Target(Path.Combine(local, "CrashDumps"),
             ScanCategory.ErrorReports, RiskLevel.Low, "Despejos de falha de aplicativos");
 

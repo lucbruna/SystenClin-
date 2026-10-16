@@ -26,6 +26,9 @@ public enum ScanCategory
 
     /// <summary>Cache de disco dos navegadores (Chrome, Edge, Firefox, etc.).</summary>
     BrowserCache = 7,
+
+    /// <summary>Rastros do usuário: arquivos recentes, jump lists, prefetch.</summary>
+    UserTraces = 8,
 }
 
 public static class ScanCategoryExtensions
@@ -40,6 +43,7 @@ public static class ScanCategoryExtensions
         ScanCategory.LogFiles => "Logs antigos",
         ScanCategory.RecycleBin => "Lixeira",
         ScanCategory.BrowserCache => "Cache de navegadores",
+        ScanCategory.UserTraces => "Rastros do usuário",
         _ => c.ToString(),
     };
 
@@ -53,6 +57,7 @@ public static class ScanCategoryExtensions
         ScanCategory.LogFiles => "Arquivos de log com mais de 30 dias. Servem para investigar problemas passados.",
         ScanCategory.RecycleBin => "Arquivos que você já mandou para a lixeira. Apagar aqui é definitivo.",
         ScanCategory.BrowserCache => "Cache de disco dos navegadores (Chrome, Edge, Firefox, Brave, Opera, Vivaldi). Seguro de apagar; o navegador recria. Feche o navegador para evitar arquivos em uso.",
+        ScanCategory.UserTraces => "Arquivos recentes, jump lists e prefetch do Windows. Apagar não afeta dados; só o histórico de acesso rápido. Pode atrasar a próxima abertura de programas.",
         _ => string.Empty,
     };
 
