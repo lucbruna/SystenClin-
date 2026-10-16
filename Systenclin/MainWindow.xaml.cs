@@ -35,6 +35,8 @@ public partial class MainWindow : Window
     private bool _trimBusy;
     private bool _dnsBusy;
     private bool _boostBusy;
+    private bool _netBusy;
+    private bool _netLoaded;
 
     // Monitor de uso (aba Otimização): amostras de 1 s com histórico de 60 s.
     private const int MonitorHistoryLimit = 60;
@@ -133,6 +135,14 @@ public partial class MainWindow : Window
         OptimizeDiskButton.IsEnabled = _elevated;
         if (!_elevated)
             OptimizeDiskButton.ToolTip = "Requer administrador";
+
+        NetRenewButton.IsEnabled = _elevated;
+        NetArpButton.IsEnabled = _elevated;
+        if (!_elevated)
+        {
+            NetRenewButton.ToolTip = "Requer administrador. Abra o programa como administrador.";
+            NetArpButton.ToolTip = "Requer administrador. Abra o programa como administrador.";
+        }
 
         // Fechar a janela no meio de uma operação precisa cancelá-la — sem isso
         // o processo morre no meio de uma limpeza.
@@ -862,6 +872,13 @@ public partial class MainWindow : Window
             _binLoaded = true;
             _ = RefreshBinAsync();
         }
+
+        // Rede: lista os adaptadores uma única vez na primeira abertura da aba.
+        if (!_netLoaded)
+        {
+            _netLoaded = true;
+            _ = RefreshNetworkAsync();
+        }
     }
 
     private async Task LoadOptimizeAsync()
@@ -1115,9 +1132,21 @@ public partial class MainWindow : Window
     // ── Aceleração em 1 clique ──────────────────────────────────────────────
 
     /// <summary>Só libera o botão quando nenhuma operação de otimização roda.</summary>
-    private bool AnyOptimizeBusy => _boostBusy || _trimBusy || _dnsBusy || _diskBusy;
+    private bool AnyOptimizeBusy => _boostBusy || _trimBusy || _dnsBusy || _diskBusy || _netBusy;
 
-    private void SyncBoostEnabled() => BoostButton.IsEnabled = !AnyOptimizeBusy;
+    /// <summary>
+    /// Sincroniza o estado dos botões da aba Otimização: Boost e rede ficam
+    /// desabilitados durante qualquer operação; as ações de rede que exigem
+    /// administrador só habilitam com o programa elevado.
+    /// </summary>
+    private void SyncBoostEnabled()
+    {
+        bool idle = !AnyOptimizeBusy;
+        BoostButton.IsEnabled = idle;
+        NetRefreshButton.IsEnabled = idle;
+        NetRenewButton.IsEnabled = idle && _elevated;
+        NetArpButton.IsEnabled = idle && _elevated;
+    }
 
     /// <summary>
     /// Roda, em sequência, o ajuste de memória (MemoryOptimizer.TrimAll) e a
@@ -1169,6 +1198,99 @@ public partial class MainWindow : Window
         finally
         {
             _boostBusy = false;
+            SyncBoostEnabled();
+        }
+    }
+
+    // ── Rede ────────────────────────────────────────────────────────────────
+
+    private void NetRefresh_Click(object sender, RoutedEventArgs e) => _ = RefreshNetworkAsync();
+
+    /// <summary>
+    /// Lista os adaptadores. Carregada uma única vez na primeira abertura da aba;
+    /// depois, só pelo botão Atualizar. Sempre na UI thread, protegida por _netBusy.
+    /// </summary>
+    private async Task RefreshNetworkAsync()
+    {
+        if (_netBusy) return;
+
+        _netBusy = true;
+        SyncBoostEnabled();
+        NetStatus.Visibility = Visibility.Visible;
+        NetStatus.Text = "Verificando adaptadores…";
+
+        try
+        {
+            var adapters = await Task.Run(() => NetworkInfo.List());
+            NetList.ItemsSource = adapters.Select(a => new NetRow(a)).ToList();
+
+            NetStatus.Text = adapters.Count == 1
+                ? "1 adaptador encontrado."
+                : $"{adapters.Count} adaptadores encontrados.";
+        }
+        catch (Exception ex)
+        {
+            NetStatus.Text = $"Não foi possível listar os adaptadores: {ex.Message}";
+        }
+        finally
+        {
+            _netBusy = false;
+            SyncBoostEnabled();
+        }
+    }
+
+    private async void NetRenew_Click(object sender, RoutedEventArgs e)
+    {
+        if (AnyOptimizeBusy) return;
+
+        _netBusy = true;
+        SyncBoostEnabled();
+        NetStatus.Visibility = Visibility.Visible;
+        NetStatus.Text = "Renovando o endereço IP…";
+
+        try
+        {
+            var result = await NetworkInfo.RenewIpAsync();
+
+            NetStatus.Text = result.Success
+                ? "Endereço IP renovado."
+                : result.Error ?? "Não foi possível renovar o endereço IP.";
+        }
+        catch (Exception ex)
+        {
+            NetStatus.Text = $"Não foi possível renovar o endereço IP: {ex.Message}";
+        }
+        finally
+        {
+            _netBusy = false;
+            SyncBoostEnabled();
+        }
+    }
+
+    private async void NetArp_Click(object sender, RoutedEventArgs e)
+    {
+        if (AnyOptimizeBusy) return;
+
+        _netBusy = true;
+        SyncBoostEnabled();
+        NetStatus.Visibility = Visibility.Visible;
+        NetStatus.Text = "Limpando o cache ARP…";
+
+        try
+        {
+            var result = await Task.Run(() => NetworkInfo.ClearArpCache());
+
+            NetStatus.Text = result.Success
+                ? "Cache ARP limpo."
+                : result.Error ?? "Não foi possível limpar o cache ARP.";
+        }
+        catch (Exception ex)
+        {
+            NetStatus.Text = $"Não foi possível limpar o cache ARP: {ex.Message}";
+        }
+        finally
+        {
+            _netBusy = false;
             SyncBoostEnabled();
         }
     }
@@ -3248,6 +3370,21 @@ public partial class MainWindow : Window
 
         private void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    /// <summary>Linha da lista de adaptadores de rede (só exibição).</summary>
+    public sealed class NetRow
+    {
+        public NetRow(NetworkAdapterInfo adapter)
+        {
+            Name = adapter.Name;
+            Detail = $"{adapter.Type} · {adapter.Status} · {adapter.Speed}";
+            Ipv4 = adapter.Ipv4 is { Length: > 0 } ip ? ip : "sem endereço IPv4";
+        }
+
+        public string Name { get; }
+        public string Detail { get; }
+        public string Ipv4 { get; }
     }
 
     // ════════════════════════════════════════════════════════════════════════

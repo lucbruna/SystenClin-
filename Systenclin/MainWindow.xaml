@@ -655,6 +655,71 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Rede -->
+                        <Border Background="{StaticResource PanelAlt}"
+                                BorderBrush="{StaticResource Line}" BorderThickness="1"
+                                CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Rede"
+                                           FontSize="14.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Fg}" />
+                                <TextBlock
+                                    Text="Adaptadores de rede do Windows. Renovar o endereço IP e limpar o cache ARP exigem administrador."
+                                    FontSize="12.5" Foreground="{StaticResource Dim}"
+                                    TextWrapping="Wrap" Margin="0,6,0,0" />
+
+                                <ItemsControl x:Name="NetList" Margin="0,10,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Padding="2,8" BorderBrush="{StaticResource Line}"
+                                                    BorderThickness="0,0,0,1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   FontSize="13.5" FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource Fg}"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding Detail}"
+                                                                   FontSize="11.5" Foreground="{StaticResource Dim}"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Ipv4}"
+                                                               FontSize="12" Foreground="{StaticResource Dim}"
+                                                               VerticalAlignment="Center" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Button x:Name="NetRefreshButton" Content="Atualizar"
+                                            Style="{StaticResource GhostButton}"
+                                            Padding="14,7" FontSize="12.5"
+                                            Click="NetRefresh_Click" />
+                                    <Button x:Name="NetRenewButton" Content="Renovar endereço IP"
+                                            Style="{StaticResource GhostButton}"
+                                            Padding="14,7" FontSize="12.5" Margin="10,0,0,0"
+                                            ToolTipService.ShowOnDisabled="True"
+                                            Click="NetRenew_Click" />
+                                    <Button x:Name="NetArpButton" Content="Limpar cache ARP"
+                                            Style="{StaticResource GhostButton}"
+                                            Padding="14,7" FontSize="12.5" Margin="10,0,0,0"
+                                            ToolTipService.ShowOnDisabled="True"
+                                            Click="NetArp_Click" />
+                                </StackPanel>
+
+                                <TextBlock x:Name="NetStatus" FontSize="12"
+                                           Foreground="{StaticResource Dim}"
+                                           TextWrapping="Wrap" Margin="0,10,0,0"
+                                           Visibility="Collapsed" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Disco do sistema -->
                         <Border Background="{StaticResource PanelAlt}"
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"

@@ -13,7 +13,7 @@ Limpeza e otimização do Windows. Construído  — **sem reaproveitar código, 
 | **v0.5** | Disco e espaço (otimização, duplicados, arquivos grandes, pastas) | ✅ pronta |
 | **v0.6** | Aplicativos: atualizar e desinstalar (winget) | ✅ pronta |
 | **v0.7** | Ponto de restauração + undo (Lixeira, backups, histórico) | ✅ pronta |
-| **v0.8** | Extras: atalhos quebrados, lixeira, barra de status, aceleração em 1 clique | ✅ pronta |
+| **v0.8** | Extras: atalhos quebrados, lixeira, barra de status, aceleração em 1 clique, rede conservadora | ✅ pronta |
 
 ## Rodar
 
@@ -22,7 +22,7 @@ cd Systenclin
 dotnet run -c Release
 ```
 
-Executável pronto: `dist/Systenclin.exe` (≈ 760 KB + `e_sqlite3.dll`),
+Executável pronto: `dist/Systenclin.exe` (≈ 775 KB + `e_sqlite3.dll`),
 arquivo único, exige o .NET Desktop Runtime 10.
 
 ## Testes
@@ -175,6 +175,10 @@ winget — nada silencioso.
 - **Aceleração em 1 clique** — devolve memória ociosa e limpa o cache DNS
   numa ação, com resultado consolidado; o botão se desabilita enquanto outra
   operação da aba Otimização roda.
+- **Rede** — lista os adaptadores do Windows (tipo, estado, velocidade e
+  IPv4); renovar o endereço IP (`ipconfig /renew`) e limpar o cache ARP
+  (`netsh`) exigem administrador. Conservador de propósito: sem tweak de
+  TCP/registro e sem reset de winsock.
 
 ---
 
@@ -213,6 +217,7 @@ Systenclin/
 │   ├── StartupManager.cs      o que sobe com o Windows
 │   ├── MemoryOptimizer.cs     poda de working set
 │   ├── DnsFlusher.cs          limpa o cache DNS
+│   ├── NetworkInfo.cs         adaptadores e ações de rede
 │   ├── BootTimeReader.cs      tempo de boot via eventos do Windows
 │   ├── ProcessManager.cs      processos por memória + encerrar
 │   ├── SystemMonitor.cs       CPU/RAM ao vivo
@@ -234,5 +239,6 @@ dist/                          Systenclin.exe publicado
 
 ## Próximo passo
 
-**Próximo:** otimização de rede conservadora, em avaliação. Demais incrementos
-conforme prioridade.
+**Próximo:** corrigir a lista de atualizações da aba Aplicativos — o winget
+encontra 27 atualizações no terminal, mas o app não as mostra. Demais
+incrementos conforme prioridade.
