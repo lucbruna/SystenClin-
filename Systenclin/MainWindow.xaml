@@ -498,6 +498,34 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Auto RAM Clean -->
+                        <Border Background="{StaticResource PanelAlt}"
+                                BorderBrush="{StaticResource Line}" BorderThickness="1"
+                                CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Auto RAM Clean"
+                                           FontSize="14.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Fg}" />
+                                <TextBlock Text="Limpa a RAM automaticamente a cada intervalo (enquanto o app estiver aberto)."
+                                           FontSize="12.5" Foreground="{StaticResource Dim}"
+                                           TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <CheckBox x:Name="AutoRamEnabled" Content="Habilitar"
+                                              FontSize="12" Foreground="{StaticResource Dim}"
+                                              VerticalAlignment="Center"
+                                              Checked="AutoRam_Toggle" Unchecked="AutoRam_Toggle" />
+                                    <TextBlock Text="Intervalo (min):" FontSize="12"
+                                               Foreground="{StaticResource Dim}"
+                                               Margin="16,0,6,0" VerticalAlignment="Center" />
+                                    <TextBox x:Name="AutoRamInterval" Text="10" Width="50"
+                                             FontSize="12" Padding="4,2" />
+                                </StackPanel>
+                                <TextBlock x:Name="AutoRamStatus" FontSize="12.5"
+                                           Foreground="{StaticResource Dim}"
+                                           TextWrapping="Wrap" Margin="0,10,0,0" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Destruição segura de arquivo -->
                         <Border Background="{StaticResource PanelAlt}"
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"

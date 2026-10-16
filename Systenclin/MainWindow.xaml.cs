@@ -1084,6 +1084,41 @@ public partial class MainWindow : Window
         }
     }
 
+    private System.Windows.Threading.DispatcherTimer? _autoRamTimer;
+
+    private void AutoRam_Toggle(object sender, RoutedEventArgs e)
+    {
+        if (AutoRamEnabled.IsChecked == true)
+        {
+            if (!int.TryParse(AutoRamInterval.Text, out int mins) || mins < 1) mins = 10;
+            _autoRamTimer?.Stop();
+            _autoRamTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMinutes(mins),
+            };
+            _autoRamTimer.Tick += (_, _) =>
+            {
+                try
+                {
+                    MemoryOptimizer.TrimAll();
+                    AutoRamStatus.Text = $"Última limpeza: {DateTime.Now:HH:mm:ss}";
+                }
+                catch (Exception ex)
+                {
+                    AutoRamStatus.Text = $"Falha: {ex.Message}";
+                }
+            };
+            _autoRamTimer.Start();
+            AutoRamStatus.Text = $"Habilitado (a cada {mins} min).";
+        }
+        else
+        {
+            _autoRamTimer?.Stop();
+            _autoRamTimer = null;
+            AutoRamStatus.Text = "Desabilitado.";
+        }
+    }
+
     private static string FormatBoot(BootPerformance? boot) => boot is null
         ? "Indisponível"
         : $"{boot.BootDuration.TotalSeconds:N1} s (às {boot.BootTime:HH:mm})";
