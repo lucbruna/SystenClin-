@@ -1814,14 +1814,24 @@
 
                     <!-- Resultados -->
                     <Grid Grid.Row="2">
-                        <TextBlock x:Name="SpaceEmptyState"
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Canvas x:Name="SpaceTreemap" Grid.Row="0"
+                                Height="200" Margin="18,8,18,8"
+                                Visibility="Collapsed"
+                                ToolTip="Clique numa área para entrar na pasta." />
+
+                        <TextBlock x:Name="SpaceEmptyState" Grid.Row="1"
                                    Text="Escolha uma pasta e clique em Analisar."
                                    FontSize="13.5" Foreground="{StaticResource Dim}"
                                    TextWrapping="Wrap" TextAlignment="Center"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    MaxWidth="460" Margin="30" />
 
-                        <ListBox x:Name="SpaceList" Visibility="Collapsed"
+                        <ListBox x:Name="SpaceList" Grid.Row="1" Visibility="Collapsed"
                                  Background="Transparent" BorderThickness="0"
                                  Padding="0,4"
                                  SelectionMode="Single"
