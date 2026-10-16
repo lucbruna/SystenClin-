@@ -626,6 +626,11 @@
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="16,8" FontSize="12.5"
                                             Click="RegDefrag_Click" />
+                                    <Button x:Name="RegDefragScheduleButton" Content="Agendar compactação"
+                                            Style="{StaticResource GhostButton}"
+                                            Padding="14,7" FontSize="12.5"
+                                            Margin="10,0,0,0"
+                                            Click="RegDefragSchedule_Click" />
                                     <TextBlock x:Name="RegDefragStatus" FontSize="12.5"
                                                Foreground="{StaticResource Dim}"
                                                TextWrapping="Wrap" Margin="12,0,0,0"
