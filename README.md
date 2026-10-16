@@ -1,244 +1,243 @@
 # Systenclin
 
-Limpeza e otimização do Windows. Construído  — **sem reaproveitar código, assets ou marca**.
+Windows cleanup and optimization. Built from scratch — **no code, assets, or branding reused**.
 
-## Estado
+## Status
 
-| Versão | Módulo | Situação |
+| Version | Module | Status |
 |---|---|---|
-| **v0.1** | Limpeza de arquivos temporários | ✅ pronta |
-| **v0.2** | Privacidade dos navegadores | ✅ pronta |
-| **v0.3** | Startup manager | ✅ pronta |
-| **v0.4** | Memória, DNS, processos e monitor ao vivo | ✅ pronta |
-| **v0.5** | Disco e espaço (otimização, duplicados, arquivos grandes, pastas) | ✅ pronta |
-| **v0.6** | Aplicativos: atualizar e desinstalar (winget) | ✅ pronta |
-| **v0.7** | Ponto de restauração + undo (Lixeira, backups, histórico) | ✅ pronta |
-| **v0.8** | Extras: atalhos quebrados, lixeira, barra de status, aceleração em 1 clique, rede conservadora | ✅ pronta |
+| **v0.1** | Temporary file cleanup | ✅ done |
+| **v0.2** | Browser privacy | ✅ done |
+| **v0.3** | Startup manager | ✅ done |
+| **v0.4** | Memory, DNS, processes, and live monitor | ✅ done |
+| **v0.5** | Disk and space (optimization, duplicates, large files, folders) | ✅ done |
+| **v0.6** | Applications: update and uninstall (winget) | ✅ done |
+| **v0.7** | Restore point + undo (Recycle Bin, backups, history) | ✅ done |
+| **v0.8** | Extras: broken shortcuts, recycle bin, status bar, 1-click boost, conservative network | ✅ done |
 
-## Rodar
+## Run
 
 ```bash
 cd Systenclin
 dotnet run -c Release
 ```
 
-Executável pronto: `dist/Systenclin.exe` (≈ 775 KB + `e_sqlite3.dll`),
-arquivo único, exige o .NET Desktop Runtime 10.
+Ready-to-run executable: `dist/Systenclin.exe` (≈ 775 KB + `e_sqlite3.dll`),
+single file, requires the .NET Desktop Runtime 10.
 
-## Testes
+## Tests
 
 ```bash
 cd Testes/Systenclin.Testes
 dotnet run -c Release
 ```
 
-**62 verificações, 0 falhas.** O foco é o que pode dar errado de forma
-perigosa, não cobertura bonita. O harness compila `Core/*.cs` direto — sem
-UI — e usa o framework de desktop só pelo EventLog dos eventos de boot.
+**62 checks, 0 failures.** The focus is on what can go dangerously wrong, not
+pretty coverage. The harness compiles `Core/*.cs` directly — no UI — and uses
+the desktop framework only for the boot-event EventLog.
 
 ---
 
-## v0.1 — Arquivos temporários
+## v0.1 — Temporary files
 
-**Análise** — só lê. Mede 16 alvos conhecidos: TEMP, cache do Windows Update,
-miniaturas, relatórios de erro, cache de NuGet/npm/pip, logs antigos.
+**Scan** — read-only. Measures 16 known targets: TEMP, Windows Update cache,
+thumbnails, error reports, NuGet/npm/pip caches, old logs.
 
-**Limpeza** — arquivos vão para a **Lixeira** (recuperáveis). Pastas de cache
-são removidas de vez, e a UI diz isso em vez de prometer undo que não existe.
+**Cleanup** — files go to the **Recycle Bin** (recoverable). Cache folders are
+removed for good, and the UI says so instead of promising undo that does not
+exist.
 
-### Regras de segurança (cobertas por teste)
+### Safety rules (covered by tests)
 
-1. **Nunca atravessa junção nem link simbólico.** Um junction em `%TEMP%`
-   apontando para `C:\Windows` faria o limpador apagar o Windows.
-2. **9 áreas proibidas**, checadas na varredura **e de novo** na hora de apagar.
-3. **Recusa raiz de unidade, caminhos rasos e travessia** (`..`).
-4. **Risco alto nunca vem marcado.** A Lixeira também não.
-5. **Uma falha não interrompe o resto.** O motivo fica registrado.
+1. **Never crosses junctions or symbolic links.** A junction in `%TEMP%`
+   pointing to `C:\Windows` would make the cleaner delete Windows.
+2. **9 protected areas**, checked during the scan **and again** at delete time.
+3. **Rejects drive roots, shallow paths, and traversal** (`..`).
+4. **High risk is never pre-checked.** Neither is the Recycle Bin.
+5. **One failure does not stop the rest.** The reason gets logged.
 
 ---
 
-## v0.2 — Privacidade dos navegadores
+## v0.2 — Browser privacy
 
-Lê e limpa histórico, cookies, formulários, downloads, permissões, cache e
-abas salvas de **Chrome, Edge, Firefox, Brave, Opera e Vivaldi** — todos os
-perfis de cada um (nesta máquina: 8 perfis).
+Reads and cleans history, cookies, form data, downloads, permissions, cache,
+and saved tabs from **Chrome, Edge, Firefox, Brave, Opera, and Vivaldi** —
+every profile of each (on this machine: 8 profiles).
 
-### O que muda em relação ao v0.1
+### What changes from v0.1
 
-O v0.1 media bytes. Aqui **não basta medir** — o usuário precisa ver o que vai
-apagar. Cada item mostra uma prévia legível:
+v0.1 measured bytes. Here **measuring is not enough** — the user must see what
+is about to be deleted. Each item shows a readable preview:
 
 ```
-Histórico de navegação — Google Chrome — Padrão
-  15/10/26 22:14  ×3   Documentação .NET
+Browsing history — Google Chrome — Default
+  10/15/26 22:14  ×3   .NET documentation
       https://learn.microsoft.com/dotnet/...
   15/10/26 21:58  ×1   GitHub — systenclin
       https://github.com/...
 ```
 
-### As três exigências que não se negociam
+### The three non-negotiables
 
-**1. Navegador fechado para dados de banco.**
+**1. Browser closed for database data.**
 
-Não existe forma segura de escrever no SQLite de um navegador aberto: ele
-mantém o estado em memória e sobrescreve, ou corrompe o banco. O app detecta
-e **recusa**, dizendo qual navegador fechar. Produtos que prometem "limpar com
-o navegador aberto" ou mentem, ou corrompem dados.
+There is no safe way to write to an open browser's SQLite file: it keeps state
+in memory and overwrites, or corrupts the database. The app detects this and
+**refuses**, telling you which browser to close. Products that promise
+"cleaning with the browser open" either lie or corrupt data.
 
-Cache e abas salvas são arquivos em disco — esses podem ser limpos agora.
+Cache and saved tabs are files on disk — those can be cleaned right now.
 
-**2. Backup antes de apagar.**
+**2. Backup before deleting.**
 
-Cada banco é copiado para `%LOCALAPPDATA%\Systenclin\backup-privacidade\`
-antes de qualquer escrita. É a única forma honesta de oferecer desfazer —
-o v0.1 não conseguia, este consegue. O botão **Backups** lista e explica como
-restaurar.
+Every database is copied to `%LOCALAPPDATA%\Systenclin\backup-privacidade\`
+before any write. It is the only honest way to offer undo — v0.1 could not,
+this one can. The **Backups** button lists them and explains how to restore.
 
-**3. Categoria inteira, nunca cookie avulso.**
+**3. Whole category, never a single cookie.**
 
-Meia-medida deixa o usuário achando que limpou e não limpou.
+Half-measures leave users thinking they cleaned it when they did not.
 
-### Leitura com o navegador aberto
+### Reading with the browser open
 
-O app lê mesmo com Chrome e Edge rodando, abrindo o arquivo com
-`FILE_SHARE_READ | FILE_SHARE_WRITE`. Um `File.ReadAllBytes` comum falharia
-com "arquivo em uso".
+The app reads even while Chrome and Edge are running, opening the file with
+`FILE_SHARE_READ | FILE_SHARE_WRITE`. A plain `File.ReadAllBytes` would fail
+with "file in use".
 
-### Riscos, ditos com clareza
+### Risks, stated clearly
 
-| Dado | Risco | Marcado por padrão? |
+| Data | Risk | Checked by default? |
 |---|---|---|
-| Histórico de navegação | baixo | sim |
-| Cache do navegador | baixo | sim |
-| Histórico de downloads | baixo | sim |
-| Formulários preenchidos | médio | **não** |
-| Abas salvas | médio | **não** |
-| Permissões de site | médio | **não** |
-| **Cookies** | **alto** | **não** |
+| Browsing history | low | yes |
+| Browser cache | low | yes |
+| Download history | low | yes |
+| Filled forms | medium | **no** |
+| Saved tabs | medium | **no** |
+| Site permissions | medium | **no** |
+| **Cookies** | **high** | **no** |
 
-Cookies desconectam de todas as contas. O aviso aparece no diálogo de
-confirmação, em texto, não escondido num tooltip.
+Cookies sign you out of every account. The warning appears in the confirmation
+dialog, in plain text, not hidden in a tooltip.
 
 ---
 
 ## v0.3 — Startup manager
 
-Ver, desabilitar e reabilitar o que sobe com o Windows, nas cinco fontes:
-chave `Run` do usuário, chave `Run` da máquina (visões 64 e 32 bits) e as duas
-pastas Inicializar.
+View, disable, and re-enable what starts with Windows, from five sources: the
+user `Run` key, the machine `Run` key (64- and 32-bit views), and both Startup
+folders.
 
-**Desativar não perde nada.** O valor original — nome, tipo e dados — é
-gravado em `%LOCALAPPDATA%\Systenclin\inicializacao.json` **antes** de sair do
-registro (e o store é desfeito se a escrita falhar). Arquivos da pasta
-Inicializar são movidos para `inicializacao_desativados`. Ativar desfaz pelo
-mesmo caminho guardado. Itens de máquina exigem administrador, e a UI diz
-isso em vez de falhar em silêncio.
+**Disabling loses nothing.** The original value — name, type, and data — is
+written to `%LOCALAPPDATA%\Systenclin\inicializacao.json` **before** leaving
+the registry (and the store is rolled back if the write fails). Startup folder
+files are moved to `inicializacao_desativados`. Enabling undoes it through the
+same saved path. Machine items require administrator, and the UI says so
+instead of failing silently.
 
-## v0.4 — Memória, DNS, processos e monitor
+## v0.4 — Memory, DNS, processes, and monitor
 
-- **Liberar memória** — poda o working set dos processos que passam de 20 MB.
-- **Limpar cache DNS** — flush direto.
-- **Processos** — top 15 por memória; encerrar confirma em dois cliques.
-- **Monitor ao vivo** — CPU e RAM com histórico de 60 s, na aba Otimização e
-  no rodapé a partir do v0.8. `GetSystemTimes` + `GlobalMemoryStatusEx`, sem
-  `PerformanceCounter`. Só roda com a janela aberta — nada residente.
+- **Free memory** — trims the working set of processes above 20 MB.
+- **Flush DNS cache** — direct flush.
+- **Processes** — top 15 by memory; killing confirms with two clicks.
+- **Live monitor** — CPU and RAM with 60 s history, in the Optimization tab
+  and in the footer since v0.8. `GetSystemTimes` + `GlobalMemoryStatusEx`, no
+  `PerformanceCounter`. Runs only while the window is open — nothing resident.
 
-## v0.5 — Disco e espaço
+## v0.5 — Disk and space
 
-- **Otimizar disco** — detecta SSD ou HDD (penalidade de busca do volume) e
-  roda `defrag /O`: TRIM em SSD, desfragmentação em HDD. Exige administrador.
-- **Duplicados** — agrupa por hash; os marcados vão para a Lixeira.
-- **Arquivos grandes** — ordenados por tamanho; Lixeira.
-- **Análise de pastas** — o que ocupa espaço, pasta por pasta.
+- **Optimize disk** — detects SSD or HDD (volume seek penalty) and runs
+  `defrag /O`: TRIM on SSDs, defragmentation on HDDs. Requires administrator.
+- **Duplicates** — grouped by hash; checked ones go to the Recycle Bin.
+- **Large files** — sorted by size; Recycle Bin.
+- **Folder analysis** — what takes up space, folder by folder.
 
-## v0.6 — Aplicativos (winget)
+## v0.6 — Applications (winget)
 
-Atualizar (individual ou todos) e desinstalar via winget. Sem winget, a UI
-explica em vez de estourar erro. A desinstalação usa o fluxo do próprio
-winget — nada silencioso.
+Update (one or all) and uninstall via winget. Without winget, the UI explains
+instead of throwing an error. Uninstall uses winget's own flow — nothing
+silent.
 
-## v0.7 — Restauração e undo
+## v0.7 — Restore and undo
 
-- **Ponto de restauração** — opcional, antes de limpar, quando aberto como
-  administrador (o checkbox fica na barra de confirmação).
-- **Undo em camadas** — arquivos vão para a Lixeira; dados de navegador têm
-  backup em `%LOCALAPPDATA%\Systenclin\backup-privacidade\`; toda operação
-  fica no **Histórico** (`CleanLog`, JSON).
+- **Restore point** — optional, before cleaning, when running as administrator
+  (the checkbox sits in the confirmation bar).
+- **Layered undo** — files go to the Recycle Bin; browser data has backups in
+  `%LOCALAPPDATA%\Systenclin\backup-privacidade\`; every operation lands in
+  the **History** (`CleanLog`, JSON).
 
 ## v0.8 — Extras
 
-- **Atalhos quebrados** — `.lnk` apontando para alvo inexistente, no Desktop
-  e no Menu Iniciar; os marcados vão para a Lixeira.
-- **Lixeira** — conta itens e tamanho (`SHQueryRecycleBin`) e esvazia com
-  confirmação em dois cliques (`SHEmptyRecycleBin`).
-- **Barra de status** — CPU e RAM no rodapé, ao lado de Backups e Histórico.
-- **Aceleração em 1 clique** — devolve memória ociosa e limpa o cache DNS
-  numa ação, com resultado consolidado; o botão se desabilita enquanto outra
-  operação da aba Otimização roda.
-- **Rede** — lista os adaptadores do Windows (tipo, estado, velocidade e
-  IPv4); renovar o endereço IP (`ipconfig /renew`) e limpar o cache ARP
-  (`netsh`) exigem administrador. Conservador de propósito: sem tweak de
-  TCP/registro e sem reset de winsock.
+- **Broken shortcuts** — `.lnk` files pointing to missing targets, on the
+  Desktop and Start Menu; checked ones go to the Recycle Bin.
+- **Recycle Bin** — counts items and size (`SHQueryRecycleBin`) and empties
+  with two-click confirmation (`SHEmptyRecycleBin`).
+- **Status bar** — CPU and RAM in the footer, next to Backups and History.
+- **1-click boost** — frees idle memory and flushes the DNS cache in one
+  action, with a consolidated result; the button disables itself while another
+  Optimization-tab operation runs.
+- **Network** — lists Windows adapters (type, status, speed, IPv4); renewing
+  the IP address (`ipconfig /renew`) and clearing the ARP cache (`netsh`)
+  require administrator. Conservative on purpose: no TCP/registry tweaks, no
+  winsock reset.
 
 ---
 
-## O que este app NÃO faz (de propósito)
+## What this app does NOT do (on purpose)
 
-- **Sem driver de kernel.** O ASC instala dois minifiltros que interceptam
-  arquivo e registro. Aqui não tem nada disso.
-- **Sem serviço residente.** Não fica rodando de fundo.
-- **Sem instalação silenciosa.** Nada de serviço `Auto` sem aviso.
-- **Sem limpador de registro.** Risco desproporcional ao ganho; ficou de fora.
-- **Sem venda cruzada.** Não oferece outros produtos.
+- **No kernel driver.** ASC installs two minifilters that intercept file and
+  registry I/O. None of that here.
+- **No resident service.** Nothing runs in the background.
+- **No silent install.** No `Auto` services without warning.
+- **No registry cleaner.** Risk out of proportion to the gain; left out.
+- **No cross-selling.** Does not push other products.
 
 ---
 
-## Estrutura
+## Structure
 
 ```
 Systenclin/
 ├── Core/
-│   ├── — limpeza (v0.1)
-│   ├── ScanCategory.cs        categorias de arquivo, risco, explicação
-│   ├── CleanableItem.cs       um item de arquivo
-│   ├── ScanTargets.cs         alvos + guarda de segurança
-│   ├── DirectoryMeasurer.cs   mede árvore sem seguir links
-│   ├── Scanner.cs             varredura de arquivos
-│   ├── Cleaner.cs             limpeza + envio à Lixeira
-│   ├── FileDeleter.cs         remoção definitiva de pastas de cache
-│   ├── CleanLog.cs            histórico em JSON
-│   ├── — privacidade (v0.2)
-│   ├── BrowserProfile.cs      descoberta de perfis de navegador
-│   ├── PrivacyItem.cs         um item de privacidade, com prévia
-│   ├── PrivacyScanner.cs      leitura dos bancos (SQLite)
-│   ├── PrivacyCleaner.cs      limpeza com backup e restauração
-│   ├── SharedFileReader.cs    leitura de arquivo travado
-│   ├── — otimização e ferramentas (v0.3+)
-│   ├── StartupManager.cs      o que sobe com o Windows
-│   ├── MemoryOptimizer.cs     poda de working set
-│   ├── DnsFlusher.cs          limpa o cache DNS
-│   ├── NetworkInfo.cs         adaptadores e ações de rede
-│   ├── BootTimeReader.cs      tempo de boot via eventos do Windows
-│   ├── ProcessManager.cs      processos por memória + encerrar
-│   ├── SystemMonitor.cs       CPU/RAM ao vivo
-│   ├── RecycleBin.cs          consultar e esvaziar a Lixeira
-│   ├── DiskOptimizer.cs       TRIM/desfragmentação com detecção de mídia
-│   ├── RestorePoint.cs        ponto de restauração
-│   ├── DuplicateFinder.cs     duplicados por hash
-│   ├── LargeFileFinder.cs     arquivos grandes
-│   ├── FolderAnalyzer.cs      o que ocupa espaço, pasta por pasta
-│   ├── ShortcutFixer.cs       atalhos quebrados
-│   ├── AppUpdater.cs          atualizações via winget
-│   └── AppUninstaller.cs      desinstalação via winget
-├── MainWindow.xaml            interface com oito abas
-└── app.manifest               asInvoker (sem admin por padrão)
+│   ├── — cleanup (v0.1)
+│   ├── ScanCategory.cs        file categories, risk, explanation
+│   ├── CleanableItem.cs       one file item
+│   ├── ScanTargets.cs         targets + safety guard
+│   ├── DirectoryMeasurer.cs   measures a tree without following links
+│   ├── Scanner.cs             file scan
+│   ├── Cleaner.cs             cleanup + send to Recycle Bin
+│   ├── FileDeleter.cs         permanent removal of cache folders
+│   ├── CleanLog.cs            history in JSON
+│   ├── — privacy (v0.2)
+│   ├── BrowserProfile.cs      browser profile discovery
+│   ├── PrivacyItem.cs         one privacy item, with preview
+│   ├── PrivacyScanner.cs      reads the databases (SQLite)
+│   ├── PrivacyCleaner.cs      cleanup with backup and restore
+│   ├── SharedFileReader.cs    reading locked files
+│   ├── — optimization and tools (v0.3+)
+│   ├── StartupManager.cs      what starts with Windows
+│   ├── MemoryOptimizer.cs     working set trim
+│   ├── DnsFlusher.cs          flushes the DNS cache
+│   ├── NetworkInfo.cs         adapters and network actions
+│   ├── BootTimeReader.cs      boot time from Windows events
+│   ├── ProcessManager.cs      processes by memory + kill
+│   ├── SystemMonitor.cs       live CPU/RAM
+│   ├── RecycleBin.cs          query and empty the Recycle Bin
+│   ├── DiskOptimizer.cs       TRIM/defrag with media detection
+│   ├── RestorePoint.cs        restore point
+│   ├── DuplicateFinder.cs     duplicates by hash
+│   ├── LargeFileFinder.cs     large files
+│   ├── FolderAnalyzer.cs      what takes up space, folder by folder
+│   ├── ShortcutFixer.cs       broken shortcuts
+│   ├── AppUpdater.cs          updates via winget
+│   └── AppUninstaller.cs      uninstall via winget
+├── MainWindow.xaml            eight-tab interface
+└── app.manifest               asInvoker (no admin by default)
 
-Testes/Systenclin.Testes/      as 62 verificações (compila o Core direto)
-dist/                          Systenclin.exe publicado
+Testes/Systenclin.Testes/      the 62 checks (compiles Core directly)
+dist/                          published Systenclin.exe
 ```
 
-## Próximo passo
+## Next step
 
-**Próximo:** corrigir a lista de atualizações da aba Aplicativos — o winget
-encontra 27 atualizações no terminal, mas o app não as mostra. Demais
-incrementos conforme prioridade.
+**Next:** fix the Applications tab update list — winget finds 27 updates in the
+terminal, but the app shows none. Further increments as prioritized.
