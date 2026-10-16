@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
+using Systenclin.Core;
 
 namespace Systenclin;
 
@@ -13,6 +14,43 @@ public partial class App : Application
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+    }
+
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        if (e.Args.Any(a => a.Equals("--headless-clean", StringComparison.OrdinalIgnoreCase)))
+        {
+            _ = RunHeadlessCleanAsync();
+            // Não chama base.OnStartup para não abrir janela.
+            return;
+        }
+        base.OnStartup(e);
+    }
+
+    private static async Task RunHeadlessCleanAsync()
+    {
+        try
+        {
+            var items = ScanTargets.All()
+                .Where(t => t.Risk != RiskLevel.High)
+                .Select(t => new CleanableItem
+                {
+                    Path = t.Path,
+                    Category = t.Category,
+                    SizeBytes = 0,
+                    Risk = t.Risk,
+                    IsDirectory = t.WholeDirectory,
+                })
+                .ToList();
+
+            var cleaner = new Cleaner();
+            await cleaner.CleanAsync(items);
+        }
+        catch { }
+        finally
+        {
+            Environment.Exit(0);
+        }
     }
 
     /// <summary>Erro na thread da interface: avisa e mantém o aplicativo vivo.</summary>

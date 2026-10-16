@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -1116,6 +1117,54 @@ public partial class MainWindow : Window
             _autoRamTimer?.Stop();
             _autoRamTimer = null;
             AutoRamStatus.Text = "Desabilitado.";
+        }
+    }
+
+    private void AutoCleanSchedule_Click(object sender, RoutedEventArgs e)
+    {
+        AutoCleanScheduleButton.IsEnabled = false;
+        AutoCleanStatus.Text = "Agendando…";
+        try
+        {
+            if (!int.TryParse(AutoCleanInterval.Text, out int mins) || mins < 5) mins = 60;
+            var exe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+            if (string.IsNullOrWhiteSpace(exe))
+            {
+                AutoCleanStatus.Text = "Não foi possível localizar o executável.";
+                return;
+            }
+            if (AutoCleanScheduler.Schedule(mins, exe, out var err))
+                AutoCleanStatus.Text = $"Agendado a cada {mins} min.";
+            else
+                AutoCleanStatus.Text = $"Falha: {err}";
+        }
+        catch (Exception ex)
+        {
+            AutoCleanStatus.Text = $"Falha: {ex.Message}";
+        }
+        finally
+        {
+            AutoCleanScheduleButton.IsEnabled = true;
+        }
+    }
+
+    private void AutoCleanUnschedule_Click(object sender, RoutedEventArgs e)
+    {
+        AutoCleanUnscheduleButton.IsEnabled = false;
+        try
+        {
+            if (AutoCleanScheduler.Unschedule(out var err))
+                AutoCleanStatus.Text = "Agendamento removido.";
+            else
+                AutoCleanStatus.Text = $"Falha: {err}";
+        }
+        catch (Exception ex)
+        {
+            AutoCleanStatus.Text = $"Falha: {ex.Message}";
+        }
+        finally
+        {
+            AutoCleanUnscheduleButton.IsEnabled = true;
         }
     }
 
