@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Systenclin.Testes</AssemblyName>
+    <RootNamespace>Systenclin.Testes</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reaproveita o núcleo do app, sem depender da UI (WPF). -->
+    <Compile Include="../../Systenclin/Core/*.cs" LinkBase="Core" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
+    <!-- BootTimeReader usa System.Diagnostics.Eventing.Reader (eventos de
+         boot); o assembly vem do framework de desktop, não do núcleo. -->
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
+  </ItemGroup>
+
+</Project>

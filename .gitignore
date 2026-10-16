@@ -1,0 +1,11 @@
+# Build
+bin/
+obj/
+
+# Publicação: staging transitório
+dist/_staging/
+
+# IDE / ruído de Windows e OneDrive
+.vs/
+*.user
+desktop.ini

@@ -1,0 +1,128 @@
+<Application x:Class="Systenclin.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+
+        <!-- Paleta -->
+        <Color x:Key="BgColor">#0F1419</Color>
+        <Color x:Key="PanelColor">#161C23</Color>
+        <Color x:Key="PanelAltColor">#1C242D</Color>
+        <Color x:Key="LineColor">#2A3542</Color>
+        <Color x:Key="AccentColor">#4A9EFF</Color>
+        <Color x:Key="OkColor">#3FB950</Color>
+        <Color x:Key="WarnColor">#D29922</Color>
+        <Color x:Key="BadColor">#F85149</Color>
+
+        <SolidColorBrush x:Key="Bg" Color="{StaticResource BgColor}" />
+        <SolidColorBrush x:Key="Panel" Color="{StaticResource PanelColor}" />
+        <SolidColorBrush x:Key="PanelAlt" Color="{StaticResource PanelAltColor}" />
+        <SolidColorBrush x:Key="Line" Color="{StaticResource LineColor}" />
+        <SolidColorBrush x:Key="Accent" Color="{StaticResource AccentColor}" />
+        <SolidColorBrush x:Key="Ok" Color="{StaticResource OkColor}" />
+        <SolidColorBrush x:Key="Warn" Color="{StaticResource WarnColor}" />
+        <SolidColorBrush x:Key="Bad" Color="{StaticResource BadColor}" />
+        <SolidColorBrush x:Key="Fg" Color="#E6EDF3" />
+        <SolidColorBrush x:Key="Dim" Color="#8B98A5" />
+
+        <!-- Botão primário -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource Accent}" />
+            <Setter Property="Foreground" Value="#0B0F14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Padding" Value="22,11" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.88" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.72" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.35" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Botão secundário -->
+        <Style x:Key="GhostButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource Fg}" />
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="Padding" Value="16,9" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{StaticResource Line}" BorderThickness="1"
+                                CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource PanelAlt}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.35" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Checkbox -->
+        <Style x:Key="RowCheck" TargetType="CheckBox">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+
+        <!-- Aba -->
+        <Style x:Key="TabButton" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource Dim}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" Background="Transparent"
+                                BorderBrush="Transparent" BorderThickness="0,0,0,2"
+                                Padding="18,14">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}" />
+                                <Setter Property="Foreground" Value="{StaticResource Fg}" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="False" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Foreground" Value="{StaticResource Fg}" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Application.Resources>
+</Application>
