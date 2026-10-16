@@ -180,13 +180,17 @@ public static class AppUpdater
     private readonly record struct RunOutcome(bool Success, int ExitCode, string StdOut, string StdErr, string? Error);
 
     // ── Parsing da tabela do winget ─────────────────────────────────────
-    // O cabeçalho muda com o idioma, mas a linha de hífens não: os runs de
-    // "-" dão o início e a largura de cada coluna, independente de texto.
+    // A tabela mudou: o cabeçalho é localizado (pt-BR/en) e, nas versões
+    // recentes, a linha de hífens vem como um ÚNICO run contínuo, sem espaço
+    // entre as colunas — o que quebra qualquer corte por posição. Por isso o
+    // parsing é por ESTRUTURA: da direita para a esquerda, o último token é a
+    // Origem, o penúltimo a Disponível, antes vem a Versão (aceita "< versão"),
+    // o ID (um token sem espaços) e o resto é o Nome (que pode ter espaços).
 
     /// <summary>
-    /// Fatia as linhas da tabela do winget nas colunas dadas pelos runs de
-    /// hífens do separador. Linha curta demais ou tabela com menos de quatro
-    /// colunas são puladas. Nunca lança por si só (falhas viram lista vazia).
+    /// Converte a saída de <c>winget upgrade</c> em pacotes. Acha a linha
+    /// separadora de hífens e lê a partir da linha seguinte (o cabeçalho fica
+    /// ANTES do separador). Nunca lança: linha estranha é apenas ignorada.
     /// </summary>
     private static IReadOnlyList<WingetPackage> ParseUpgrades(string output)
     {
@@ -207,37 +211,72 @@ public static class AppUpdater
             }
         }
 
-        if (separator < 0)
-            return packages;
+        // Os pacotes começam logo depois do separador. Sem separador (formato
+        // inesperado), tenta a partir da segunda linha, pulando o cabeçalho.
+        var start = separator >= 0 ? separator + 1 : 1;
 
-        var columns = FindColumns(lines[separator].TrimEnd('\r'));
-        if (columns.Count < 4)
-            return packages;
-
-        // A linha seguinte ao separador é o cabeçalho (ignorada); os pacotes vêm depois.
-        for (var i = separator + 2; i < lines.Length; i++)
+        for (var i = start; i < lines.Length; i++)
         {
-            var line = lines[i].TrimEnd('\r');
-            if (line.Trim().Length == 0)
-                continue;
-
-            var fields = SliceColumns(line, columns);
-            if (fields.Count < 4)
-                continue;
-
-            var name = fields[0];
-            var id = fields[1];
-            if (name.Length == 0 || id.Length == 0)
-                continue;
-
-            var current = fields[2];
-            var available = fields.Count > 3 ? fields[3] : string.Empty;
-            var source = fields.Count > 4 ? fields[4] : string.Empty;
-
-            packages.Add(new WingetPackage(name, id, current, available, source));
+            if (TryParseRow(lines[i].TrimEnd('\r'), out var package))
+                packages.Add(package);
         }
 
         return packages;
+    }
+
+    /// <summary>
+    /// Lê uma linha de dados da direita para a esquerda: Origem, Disponível,
+    /// Versão (aceita o prefixo "&lt; "), ID (um token) e Nome (o restante).
+    /// Linhas curtas, o cabeçalho e o resumo não viram pacote. Nunca lança.
+    /// </summary>
+    private static bool TryParseRow(string line, out WingetPackage package)
+    {
+        package = null!;
+
+        if (line.Trim().Length == 0 || IsSeparatorLine(line))
+            return false;
+
+        // Divide por espaços em branco: o Nome (com espaços) fica preservado.
+        var tokens = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (tokens.Length < 5)
+            return false; // mínimo: Nome, ID, Versão, Disponível, Origem
+
+        var last = tokens.Length - 1;
+        var source = tokens[last];
+        var available = tokens[last - 1];
+
+        var cursor = last - 2;
+        string current;
+
+        // A versão pode vir como "< 2026.3.1": o "<" é o token ANTERIOR ao
+        // número (dois tokens), então consome ambos.
+        if (tokens[cursor - 1] == "<")
+        {
+            current = $"< {tokens[cursor]}";
+            cursor -= 2;
+        }
+        else
+        {
+            current = tokens[cursor];
+            cursor -= 1;
+        }
+
+        // Precisa sobrar pelo menos Nome (1 token) + ID (1 token).
+        if (cursor < 1)
+            return false;
+
+        var id = tokens[cursor];
+        var name = string.Join(' ', tokens, 0, cursor);
+
+        // Cabeçalho localizado: o rótulo da coluna ID é "ID" em pt-BR e inglês.
+        if (id.Equals("ID", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (name.Length == 0 || id.Length == 0 || source.Length == 0)
+            return false;
+
+        package = new WingetPackage(name, id, current, available, source);
+        return true;
     }
 
     /// <summary>Linha composta só de espaços e hífens, com pelo menos um hífen.</summary>
@@ -258,52 +297,6 @@ public static class AppUpdater
         }
 
         return hasDash;
-    }
-
-    /// <summary>
-    /// Cada run de hífens do separador dá o início e a largura de uma coluna.
-    /// </summary>
-    private static List<(int Start, int Width)> FindColumns(string separator)
-    {
-        var columns = new List<(int Start, int Width)>();
-
-        var i = 0;
-        while (i < separator.Length)
-        {
-            if (separator[i] != '-')
-            {
-                i++;
-                continue;
-            }
-
-            var start = i;
-            while (i < separator.Length && separator[i] == '-')
-                i++;
-
-            columns.Add((start, i - start));
-        }
-
-        return columns;
-    }
-
-    /// <summary>
-    /// Fatia a linha pelas colunas: campos além do fim da linha são omitidos
-    /// e cada campo é aparado. Linha curta resulta em menos campos.
-    /// </summary>
-    private static List<string> SliceColumns(string line, List<(int Start, int Width)> columns)
-    {
-        var fields = new List<string>(columns.Count);
-
-        foreach (var (start, width) in columns)
-        {
-            if (start >= line.Length)
-                break;
-
-            var length = Math.Min(width, line.Length - start);
-            fields.Add(line.Substring(start, length).Trim());
-        }
-
-        return fields;
     }
 
     // ── Saída ───────────────────────────────────────────────────────────

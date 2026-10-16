@@ -155,7 +155,8 @@ instead of failing silently.
 
 Update (one or all) and uninstall via winget. Without winget, the UI explains
 instead of throwing an error. Uninstall uses winget's own flow — nothing
-silent.
+silent. The update list is parsed structurally (columns read right to left),
+so it survives winget's localized headers and column format changes.
 
 ## v0.7 — Restore and undo
 
@@ -239,5 +240,5 @@ dist/                          published Systenclin.exe
 
 ## Next step
 
-**Next:** fix the Applications tab update list — winget finds 27 updates in the
-terminal, but the app shows none. Further increments as prioritized.
+**Next:** code-quality improvements from an ongoing open-source review, then
+further increments as prioritized.
