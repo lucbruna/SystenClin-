@@ -308,7 +308,7 @@ try
     // Restauração: só quando nenhum navegador está aberto.
     if (running.Count == 0 && results[0].BackupPath is not null)
     {
-        var restored = PrivacyCleaner.RestoreBackupTo(results[0].BackupPath, fakeDb, out var rerr);
+        var restored = PrivacyCleaner.RestoreBackupTo(results[0].BackupPath!, fakeDb, out var rerr);
         Check("restauração do backup funciona", restored, rerr);
 
         using var check = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={fakeDb}");

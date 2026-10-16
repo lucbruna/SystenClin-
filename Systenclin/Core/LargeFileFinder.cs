@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace Systenclin.Core;
@@ -166,72 +165,10 @@ public static class LargeFileFinder
                 continue;
             }
 
-            if (TryRecycle(path))
+            if (ShellRecycle.Send(path) == RecycleOutcome.Deleted)
                 recycled++;
         }
 
         return recycled;
-    }
-
-    // Mesmo P/Invoke do ShortcutFixer/DuplicateFinder, replicado para este
-    // arquivo ficar auto-contido. Sem WScript/COM aqui, não há exigência de STA:
-    // a varredura e a reciclagem rodam na thread de chamada (Task.Run da UI).
-    // Diferença deliberada: nunca existe plano B de exclusão permanente.
-
-    private const uint FO_DELETE = 0x0003;
-    private const ushort FOF_SILENT = 0x0004;
-    private const ushort FOF_NOCONFIRMATION = 0x0010;
-    private const ushort FOF_ALLOWUNDO = 0x0040;
-    private const ushort FOF_NOERRORUI = 0x0400;
-    // Se a Lixeira não estiver disponível, o shell pede confirmação antes de
-    // apagar de vez; nunca apaga permanentemente em silêncio (sobrepõe o FOF_NOCONFIRMATION).
-    private const ushort FOF_WANTNUKEWARNING = 0x4000;
-    private const int ERROR_CANCELLED = 1223;
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct SHFILEOPSTRUCT
-    {
-        public IntPtr hwnd;
-        public uint wFunc;
-        [MarshalAs(UnmanagedType.LPWStr)] public string pFrom;
-        [MarshalAs(UnmanagedType.LPWStr)] public string? pTo;
-        public ushort fFlags;
-        [MarshalAs(UnmanagedType.Bool)] public bool fAnyOperationsAborted;
-        public IntPtr hNameMappings;
-        [MarshalAs(UnmanagedType.LPWStr)] public string? lpszProgressTitle;
-    }
-
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    private static extern int SHFileOperation(ref SHFILEOPSTRUCT lpFileOp);
-
-    /// <summary>
-    /// Tenta reciclar um único arquivo. true só se o shell reporta sucesso e o
-    /// arquivo realmente sumiu do caminho original.
-    /// </summary>
-    private static bool TryRecycle(string path)
-    {
-        try
-        {
-            var op = new SHFILEOPSTRUCT
-            {
-                wFunc = FO_DELETE,
-                // Duplo nulo no fim: a API exige lista terminada em \0\0.
-                pFrom = Path.GetFullPath(path) + '\0' + '\0',
-                fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_NOERRORUI
-                         | FOF_WANTNUKEWARNING,
-            };
-
-            int result = SHFileOperation(ref op);
-
-            // Recusa do usuário: nada foi apagado.
-            if (result == ERROR_CANCELLED || op.fAnyOperationsAborted)
-                return false;
-
-            return result == 0 && !File.Exists(path);
-        }
-        catch
-        {
-            return false;
-        }
     }
 }

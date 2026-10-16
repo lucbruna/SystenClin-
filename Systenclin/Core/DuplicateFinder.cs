@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 namespace Systenclin.Core;
@@ -20,7 +19,11 @@ public static class DuplicateFinder
     private const int HashBufferSize = 1024 * 1024;
 
     // IgnoreInaccessible: pasta sem permissão é pulada em vez de derrubar a varredura.
-    // ReparsePoint: junção nunca é atravessada. System: arquivo do sistema fica fora.
+    // AttributesToSkip:
+    //   System       — arquivos gerenciados pelo SO, fora do escopo desta limpeza.
+    //   ReparsePoint — nunca atravessar junções/links (segurança: evita agir fora
+    //                  da árvore varrida e contar o mesmo arquivo duas vezes).
+    //   Hidden NÃO é pulado de propósito: arquivos ocultos do usuário são candidatos válidos.
     private static readonly EnumerationOptions Options = new()
     {
         IgnoreInaccessible = true,
@@ -191,7 +194,7 @@ public static class DuplicateFinder
                 continue;
             }
 
-            if (TryRecycle(path))
+            if (ShellRecycle.Send(path) == RecycleOutcome.Deleted)
                 recycled++;
         }
 
@@ -242,68 +245,6 @@ public static class DuplicateFinder
         {
             if (buffer is not null)
                 ArrayPool<byte>.Shared.Return(buffer);
-        }
-    }
-
-    // O Cleaner tem o mesmo P/Invoke, mas não expõe método público de reciclar
-    // arquivo único — então o padrão foi replicado para o arquivo ficar
-    // auto-contido. Diferença deliberada: aqui não existe plano B de exclusão
-    // permanente, nunca.
-
-    private const uint FO_DELETE = 0x0003;
-    private const ushort FOF_SILENT = 0x0004;
-    private const ushort FOF_NOCONFIRMATION = 0x0010;
-    private const ushort FOF_ALLOWUNDO = 0x0040;
-    private const ushort FOF_NOERRORUI = 0x0400;
-    // Se a Lixeira não estiver disponível, o shell pede confirmação antes de
-    // apagar de vez; nunca apaga permanentemente em silêncio (sobrepõe o FOF_NOCONFIRMATION).
-    private const ushort FOF_WANTNUKEWARNING = 0x4000;
-    private const int ERROR_CANCELLED = 1223;
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct SHFILEOPSTRUCT
-    {
-        public IntPtr hwnd;
-        public uint wFunc;
-        [MarshalAs(UnmanagedType.LPWStr)] public string pFrom;
-        [MarshalAs(UnmanagedType.LPWStr)] public string? pTo;
-        public ushort fFlags;
-        [MarshalAs(UnmanagedType.Bool)] public bool fAnyOperationsAborted;
-        public IntPtr hNameMappings;
-        [MarshalAs(UnmanagedType.LPWStr)] public string? lpszProgressTitle;
-    }
-
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    private static extern int SHFileOperation(ref SHFILEOPSTRUCT lpFileOp);
-
-    /// <summary>
-    /// Tenta reciclar um único arquivo. true só se o shell reporta sucesso e o
-    /// arquivo realmente sumiu do caminho original.
-    /// </summary>
-    private static bool TryRecycle(string path)
-    {
-        try
-        {
-            var op = new SHFILEOPSTRUCT
-            {
-                wFunc = FO_DELETE,
-                // Duplo nulo no fim: a API exige lista terminada em \0\0.
-                pFrom = Path.GetFullPath(path) + '\0' + '\0',
-                fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_NOERRORUI
-                         | FOF_WANTNUKEWARNING,
-            };
-
-            int result = SHFileOperation(ref op);
-
-            // Recusa do usuário: nada foi apagado.
-            if (result == ERROR_CANCELLED || op.fAnyOperationsAborted)
-                return false;
-
-            return result == 0 && !File.Exists(path);
-        }
-        catch
-        {
-            return false;
         }
     }
 }
