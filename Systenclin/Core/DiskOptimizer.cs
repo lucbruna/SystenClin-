@@ -196,16 +196,19 @@ public static class DiskOptimizer
                 try { proc.Kill(entireProcessTree: true); } catch { }
             });
 
-            // Lê antes do WaitForExit: pipe cheio travaria o filho para sempre.
-            // A saída do defrag é pequena, então a leitura síncrona é segura.
-            var stdout = proc.StandardOutput.ReadToEnd();
-            var stderr = proc.StandardError.ReadToEnd();
+            // Drena os dois fluxos EM PARALELO: ler um só depois do outro pode
+            // travar o filho se ele encher o pipe que ainda não está sendo lido.
+            var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+            var stderrTask = proc.StandardError.ReadToEndAsync();
+            Task.WaitAll(stdoutTask, stderrTask);
 
             proc.WaitForExit();
 
             if (ct.IsCancellationRequested)
                 return new OptimizeResult(false, "Otimização cancelada.", null);
 
+            var stdout = stdoutTask.Result;
+            var stderr = stderrTask.Result;
             var output = ComposeOutput(stdout, stderr);
             var exitCode = proc.ExitCode;
 

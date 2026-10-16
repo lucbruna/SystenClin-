@@ -276,15 +276,20 @@ public sealed class PrivacyCleaner
             }
 
             int deleted = 0, skipped = 0, dirsLeft = 0;
+            string? refusal = null;
             foreach (var path in paths)
             {
                 var outcome = FileDeleter.DeleteTree(path, ct);
                 deleted += outcome.FilesDeleted;
                 skipped += outcome.FilesSkipped;
                 dirsLeft += outcome.DirsLeftBehind;
+                refusal ??= outcome.Error;
             }
 
             var touched = string.Join("; ", paths);
+
+            if (refusal is not null)
+                return new Result(item, false, false, deleted, null, refusal, touched);
 
             if (skipped == 0 && dirsLeft == 0)
                 return new Result(item, true, false, deleted, null, null, touched);

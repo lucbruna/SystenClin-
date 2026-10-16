@@ -99,6 +99,11 @@ public sealed class Cleaner
                     return new Result(item, false, outcome.BytesFreed, outcome.FilesDeleted,
                         Recoverable: false, "Cancelado — limpeza parcial");
 
+                // Recusa de segurança (ex.: apagar através de um vínculo).
+                if (outcome.Error is not null)
+                    return new Result(item, false, outcome.BytesFreed, outcome.FilesDeleted,
+                        Recoverable: false, outcome.Error);
+
                 bool ok = outcome.FilesSkipped == 0 && outcome.DirsLeftBehind == 0;
 
                 if (!ok)
@@ -132,9 +137,10 @@ public sealed class Cleaner
                     return new Result(item, false, 0, 0, false, "Cancelado pelo usuário");
 
                 default:
-                    // A Lixeira falhou: apaga de vez, sem recuperação.
-                    File.Delete(item.Path);
-                    return new Result(item, true, size, 1, Recoverable: false, null);
+                    // A Lixeira falhou: manter o arquivo. Apagar de vez seria
+                    // irreversível e contraria a promessa feita na interface.
+                    return new Result(item, false, 0, 0, Recoverable: false,
+                        "não foi possível enviar para a Lixeira — o arquivo foi mantido");
             }
         }
         catch (UnauthorizedAccessException)

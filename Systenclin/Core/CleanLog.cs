@@ -44,6 +44,10 @@ public sealed class CleanLog
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
+    // Serializa o ler-alterar-gravar: sem isto, duas gravações concorrentes
+    // podem perder entradas silenciosamente (mesmo temp, mesmo alvo).
+    private static readonly object Gate = new();
+
     public IReadOnlyList<Entry> Load()
     {
         try
@@ -62,24 +66,27 @@ public sealed class CleanLog
     {
         var tmp = LogPath + ".tmp";
 
-        try
+        lock (Gate)
         {
-            Directory.CreateDirectory(LogDirectory);
-            var all = Load().ToList();
-            all.AddRange(entries);
+            try
+            {
+                Directory.CreateDirectory(LogDirectory);
+                var all = Load().ToList();
+                all.AddRange(entries);
 
-            // Mantém o histórico enxuto: últimas 500 operações.
-            if (all.Count > 500) all = all.TakeLast(500).ToList();
+                // Mantém o histórico enxuto: últimas 500 operações.
+                if (all.Count > 500) all = all.TakeLast(500).ToList();
 
-            // Escreve num temporário e só então troca: nunca deixa
-            // historico.json pela metade se algo falhar no meio.
-            File.WriteAllText(tmp, JsonSerializer.Serialize(all, JsonOptions));
-            File.Move(tmp, LogPath, overwrite: true);
-        }
-        catch
-        {
-            // Log é conveniência, não pode derrubar a limpeza.
-            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
+                // Escreve num temporário e só então troca: nunca deixa
+                // historico.json pela metade se algo falhar no meio.
+                File.WriteAllText(tmp, JsonSerializer.Serialize(all, JsonOptions));
+                File.Move(tmp, LogPath, overwrite: true);
+            }
+            catch
+            {
+                // Log é conveniência, não pode derrubar a limpeza.
+                try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
+            }
         }
     }
 

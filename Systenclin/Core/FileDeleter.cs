@@ -5,7 +5,8 @@ namespace Systenclin.Core;
 /// <summary>Apaga uma árvore de diretórios de forma resiliente. Nunca lança por falha individual.</summary>
 public static class FileDeleter
 {
-    public sealed record Outcome(long BytesFreed, int FilesDeleted, int FilesSkipped, int DirsLeftBehind);
+    public sealed record Outcome(
+        long BytesFreed, int FilesDeleted, int FilesSkipped, int DirsLeftBehind, string? Error = null);
 
     // IgnoreInaccessible: pasta sem permissão é pulada em vez de derrubar a limpeza.
     // RecurseSubdirectories=false: a varredura é iterativa, com pilha própria.
@@ -27,6 +28,17 @@ public static class FileDeleter
 
         if (ct.IsCancellationRequested)
             return new Outcome(0, 0, 0, 0);
+
+        // Nunca apaga ATRAVÉS de um vínculo: se alguma pasta entre a raiz do
+        // volume e o pai do alvo for junção/symlink, a exclusão cruzaria para o
+        // alvo do vínculo — fora da árvore pretendida. Recusa sem apagar nada.
+        if (HasReparseAncestor(path))
+            return new Outcome(0, 0, 0, 0,
+                "Não é seguro apagar através de um vínculo (junção ou link simbólico) — nada foi apagado");
+
+        // A própria raiz sendo um vínculo: remove só o vínculo, nunca o alvo.
+        if (IsReparsePoint(new DirectoryInfo(path)))
+            return RemoveLink(path);
 
         long bytesFreed = 0;
         int filesDeleted = 0;
@@ -162,6 +174,64 @@ public static class FileDeleter
         try
         {
             return (dir.Attributes & FileAttributes.ReparsePoint) != 0;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    /// <summary>Remove o próprio vínculo (junção/symlink), sem tocar no alvo.</summary>
+    private static Outcome RemoveLink(string path)
+    {
+        try
+        {
+            Directory.Delete(path, recursive: false);
+            return new Outcome(0, 0, 0, 0);
+        }
+        catch
+        {
+            return new Outcome(0, 0, 0, 1);
+        }
+    }
+
+    /// <summary>
+    /// Verdadeiro se algum componente do caminho entre a raiz do volume e o pai
+    /// do alvo for um ponto de reparse. Fail-closed: sem leitura dos atributos,
+    /// presume que é vínculo e recusa (espelha DirectoryMeasurer).
+    /// </summary>
+    private static bool HasReparseAncestor(string path)
+    {
+        try
+        {
+            var full = Path.GetFullPath(path)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            var parent = Directory.GetParent(full);
+            if (parent is null)
+                return false;
+
+            // Do pai do alvo para cima, até (sem incluir) a raiz do volume.
+            var chain = new Stack<DirectoryInfo>();
+            for (var dir = parent; dir is not null && dir.Parent is not null; dir = dir.Parent)
+                chain.Push(dir);
+
+            while (chain.Count > 0)
+            {
+                var dir = chain.Pop();
+                try
+                {
+                    if ((dir.Attributes & FileAttributes.ReparsePoint) != 0)
+                        return true;
+                }
+                catch
+                {
+                    // Sem atributos, o mais seguro é não atravessar.
+                    return true;
+                }
+            }
+
+            return false;
         }
         catch
         {

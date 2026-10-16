@@ -314,6 +314,127 @@ try
     Check("histórico de arquivos foi gravado", log.Load().Count >= 1);
     Check("histórico registra a recusa de System32",
         log.Load().Any(e => !e.Succeeded && e.Path.Contains("System32")));
+
+    // ══════════════════════════════════════════════════════════════════════
+    Section("9. Remoção segura de árvore de arquivos (FileDeleter)");
+    // ══════════════════════════════════════════════════════════════════════
+
+    var ws = Path.Combine(Path.GetTempPath(), "opencode", "systenclin-fd-" + Guid.NewGuid().ToString("N")[..8]);
+    Directory.CreateDirectory(ws);
+    var heldLocks = new List<FileStream>();
+
+    string MakeJunction(string link, string target)
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c mklink /J \"{link}\" \"{target}\"")
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        var err = proc.StandardError.ReadToEnd();
+        proc.StandardOutput.ReadToEnd();
+        proc.WaitForExit();
+        return err.Trim();
+    }
+
+    try
+    {
+        // (a) Árvore aninhada: removida por completo, com contagens corretas.
+        var caseA = Path.Combine(ws, "A");
+        Directory.CreateDirectory(Path.Combine(caseA, "sub", "deep"));
+        File.WriteAllBytes(Path.Combine(caseA, "a.bin"), new byte[1000]);
+        File.WriteAllBytes(Path.Combine(caseA, "sub", "b.bin"), new byte[500]);
+        File.WriteAllBytes(Path.Combine(caseA, "sub", "deep", "c.bin"), new byte[250]);
+
+        var outA = FileDeleter.DeleteTree(caseA);
+        Check("árvore aninhada removida", !Directory.Exists(caseA));
+        Check("contagem de arquivos correta", outA.FilesDeleted == 3, $"removeu {outA.FilesDeleted}");
+        Check("bytes liberados corretos", outA.BytesFreed == 1750, $"liberou {outA.BytesFreed}");
+
+        // (b) Junção FILHA: o vínculo sai, o alvo fica intacto.
+        var targetB = Path.Combine(ws, "B-target");
+        Directory.CreateDirectory(targetB);
+        File.WriteAllBytes(Path.Combine(targetB, "keep.bin"), new byte[2000]);
+
+        var caseB = Path.Combine(ws, "B");
+        Directory.CreateDirectory(caseB);
+        var linkB = Path.Combine(caseB, "link");
+        var jb = MakeJunction(linkB, targetB);
+        Check("junção filha criada", Directory.Exists(linkB), jb);
+
+        FileDeleter.DeleteTree(caseB);
+        Check("junção filha desvinculada (pasta-pai removida)", !Directory.Exists(caseB));
+        Check("alvo da junção filha permanece", Directory.Exists(targetB));
+        Check("arquivo do alvo da junção filha intacto", File.Exists(Path.Combine(targetB, "keep.bin")));
+
+        // (c) RAIZ é a junção: não atravessa; só remove o vínculo.
+        var targetC = Path.Combine(ws, "C-target");
+        Directory.CreateDirectory(targetC);
+        File.WriteAllBytes(Path.Combine(targetC, "keep.bin"), new byte[500]);
+        var linkC = Path.Combine(ws, "C-link");
+        var jc = MakeJunction(linkC, targetC);
+        Check("junção-raiz criada", Directory.Exists(linkC), jc);
+
+        FileDeleter.DeleteTree(linkC);
+        Check("raiz-junção desvinculada", !Directory.Exists(linkC));
+        Check("alvo da raiz-junção permanece", Directory.Exists(targetC));
+        Check("arquivo do alvo da raiz-junção intacto", File.Exists(Path.Combine(targetC, "keep.bin")));
+
+        // (d) Através de junção ANCESTRAL: recusa e não apaga nada.
+        var targetD = Path.Combine(ws, "D-target");
+        Directory.CreateDirectory(Path.Combine(targetD, "sub"));
+        File.WriteAllBytes(Path.Combine(targetD, "sub", "keep.bin"), new byte[300]);
+        var linkD = Path.Combine(ws, "D-link");
+        var jd = MakeJunction(linkD, targetD);
+        Check("junção ancestral criada", Directory.Exists(linkD), jd);
+
+        var outD = FileDeleter.DeleteTree(Path.Combine(linkD, "sub"));
+        Check("recusa apagar através de junção ancestral", outD.Error is not null, outD.Error);
+        Check("nada apagado sob o alvo da junção ancestral",
+            File.Exists(Path.Combine(targetD, "sub", "keep.bin")) && Directory.Exists(linkD));
+
+        // (e) Cancelamento no meio: não lança e reporta falha.
+        // Arquivos travados (FileShare.None) forçam uma pausa de 50 ms cada,
+        // tornando o cancelamento no meio da árvore determinístico.
+        var caseE = Path.Combine(ws, "E");
+        Directory.CreateDirectory(caseE);
+        for (int i = 0; i < 10; i++)
+        {
+            var p = Path.Combine(caseE, $"locked-{i}.bin");
+            File.WriteAllBytes(p, new byte[64]);
+            heldLocks.Add(new FileStream(p, FileMode.Open, FileAccess.ReadWrite, FileShare.None));
+        }
+
+        var eItem = new CleanableItem
+        {
+            Path = caseE, Category = ScanCategory.TemporaryFiles,
+            SizeBytes = 10 * 64, IsDirectory = true, FileCount = 10, Risk = RiskLevel.Low,
+        };
+
+        using var eCts = new CancellationTokenSource();
+        eCts.CancelAfter(100);
+        bool threw = false;
+        IReadOnlyList<Cleaner.Result> eResults = [];
+        try { eResults = await new Cleaner().CleanAsync([eItem], null, eCts.Token); }
+        catch { threw = true; }
+
+        Check("cancelamento no meio não lança exceção", !threw);
+        Check("cancelamento no meio reporta falha",
+            eResults.Count == 1 && !eResults[0].Succeeded,
+            eResults.Count == 1 ? eResults[0].Error : "sem resultado");
+    }
+    finally
+    {
+        foreach (var s in heldLocks) { try { s.Dispose(); } catch { } }
+
+        // Ordem obrigatória: apaga os vínculos ANTES dos alvos.
+        try { var l = Path.Combine(ws, "B", "link"); if (Directory.Exists(l)) Directory.Delete(l); } catch { }
+        try { var l = Path.Combine(ws, "C-link"); if (Directory.Exists(l)) Directory.Delete(l); } catch { }
+        try { var l = Path.Combine(ws, "D-link"); if (Directory.Exists(l)) Directory.Delete(l); } catch { }
+        try { if (Directory.Exists(ws)) Directory.Delete(ws, true); } catch { }
+    }
 }
 finally
 {
