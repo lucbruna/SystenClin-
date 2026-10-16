@@ -1037,6 +1037,27 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void DriverClean_Click(object sender, RoutedEventArgs e)
+    {
+        DriverCleanButton.IsEnabled = false;
+        DriverCleanStatus.Text = "Limpando…";
+        try
+        {
+            var r = await Task.Run(() => DriverCleaner.Clean());
+            DriverCleanStatus.Text = r.Success
+                ? $"Concluído: {r.Removed} removido(s), {r.Kept} mantido(s)."
+                : $"Falha: {r.Error}";
+        }
+        catch (Exception ex)
+        {
+            DriverCleanStatus.Text = $"Falha: {ex.Message}";
+        }
+        finally
+        {
+            DriverCleanButton.IsEnabled = true;
+        }
+    }
+
     private static string FormatBoot(BootPerformance? boot) => boot is null
         ? "Indisponível"
         : $"{boot.BootDuration.TotalSeconds:N1} s (às {boot.BootTime:HH:mm})";
