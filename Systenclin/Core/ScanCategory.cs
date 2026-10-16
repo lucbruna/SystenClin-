@@ -23,6 +23,9 @@ public enum ScanCategory
 
     /// <summary>Lixeira.</summary>
     RecycleBin = 6,
+
+    /// <summary>Cache de disco dos navegadores (Chrome, Edge, Firefox, etc.).</summary>
+    BrowserCache = 7,
 }
 
 public static class ScanCategoryExtensions
@@ -36,6 +39,7 @@ public static class ScanCategoryExtensions
         ScanCategory.PackageCache => "Cache de instaladores",
         ScanCategory.LogFiles => "Logs antigos",
         ScanCategory.RecycleBin => "Lixeira",
+        ScanCategory.BrowserCache => "Cache de navegadores",
         _ => c.ToString(),
     };
 
@@ -48,6 +52,7 @@ public static class ScanCategoryExtensions
         ScanCategory.PackageCache => "Cópias de pacotes baixados por gerenciadores (NuGet, npm, pip). Apagar deixa a próxima instalação mais lenta, mas nada quebra.",
         ScanCategory.LogFiles => "Arquivos de log com mais de 30 dias. Servem para investigar problemas passados.",
         ScanCategory.RecycleBin => "Arquivos que você já mandou para a lixeira. Apagar aqui é definitivo.",
+        ScanCategory.BrowserCache => "Cache de disco dos navegadores (Chrome, Edge, Firefox, Brave, Opera, Vivaldi). Seguro de apagar; o navegador recria. Feche o navegador para evitar arquivos em uso.",
         _ => string.Empty,
     };
 

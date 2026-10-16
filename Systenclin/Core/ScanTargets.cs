@@ -109,6 +109,35 @@ public static class ScanTargets
         yield return new Target(Path.Combine(local, "Microsoft", "Windows", "WebCache"),
             ScanCategory.TemporaryFiles, RiskLevel.Low);
 
+        // ── Cache de navegadores (Chrome, Edge, Firefox, Brave, Opera, Vivaldi) ─
+        // Descoberta em disco: um alvo por pasta de cache de cada perfil. O
+        // navegador recria o que for apagado; arquivo em uso é pulado (não é
+        // erro). Varredura de melhor esforço: falha de disco não derruba o resto.
+        // Yield dentro de try/catch não é permitido em iterator; materializa
+        // primeiro e emite depois.
+        List<Target>? browserTargets = null;
+        try
+        {
+            browserTargets = [];
+            foreach (var profile in BrowserLocator.Discover())
+            {
+                foreach (var cachePath in profile.CachePaths)
+                {
+                    browserTargets.Add(new Target(cachePath, ScanCategory.BrowserCache, RiskLevel.Low,
+                        $"{profile.Browser.DisplayName()} — {profile.ProfileName}"));
+                }
+            }
+        }
+        catch
+        {
+            browserTargets = null;
+        }
+
+        if (browserTargets is not null)
+        {
+            foreach (var t in browserTargets) yield return t;
+        }
+
         yield return new Target(Path.Combine(local, "CrashDumps"),
             ScanCategory.ErrorReports, RiskLevel.Low, "Despejos de falha de aplicativos");
 
