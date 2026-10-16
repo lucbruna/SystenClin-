@@ -1168,6 +1168,27 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void RegistryClean_Click(object sender, RoutedEventArgs e)
+    {
+        RegistryCleanButton.IsEnabled = false;
+        RegistryCleanStatus.Text = "Limpando…";
+        try
+        {
+            var r = await Task.Run(() => RegistryCleaner.Clean());
+            RegistryCleanStatus.Text = r.Success
+                ? $"Concluído: {r.Removed} entrada(s) removida(s) de {r.Scanned} verificada(s)."
+                : $"Falha: {r.Error}";
+        }
+        catch (Exception ex)
+        {
+            RegistryCleanStatus.Text = $"Falha: {ex.Message}";
+        }
+        finally
+        {
+            RegistryCleanButton.IsEnabled = true;
+        }
+    }
+
     private static string FormatBoot(BootPerformance? boot) => boot is null
         ? "Indisponível"
         : $"{boot.BootDuration.TotalSeconds:N1} s (às {boot.BootTime:HH:mm})";

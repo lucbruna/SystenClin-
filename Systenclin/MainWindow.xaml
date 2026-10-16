@@ -562,6 +562,30 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Registry Clean (seguro) -->
+                        <Border Background="{StaticResource PanelAlt}"
+                                BorderBrush="{StaticResource Line}" BorderThickness="1"
+                                CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Limpeza de registro (segura)"
+                                           FontSize="14.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Fg}" />
+                                <TextBlock Text="Remove entradas órfãs de software desinstalado e rastros de arquivos recentes (MRU). Faz backup antes de remover."
+                                           FontSize="12.5" Foreground="{StaticResource Dim}"
+                                           TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Button x:Name="RegistryCleanButton" Content="Limpar registro"
+                                            Style="{StaticResource PrimaryButton}"
+                                            Padding="16,8" FontSize="12.5"
+                                            Click="RegistryClean_Click" />
+                                    <TextBlock x:Name="RegistryCleanStatus" FontSize="12.5"
+                                               Foreground="{StaticResource Dim}"
+                                               TextWrapping="Wrap" Margin="12,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Destruição segura de arquivo -->
                         <Border Background="{StaticResource PanelAlt}"
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
