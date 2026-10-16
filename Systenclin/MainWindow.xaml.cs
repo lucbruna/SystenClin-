@@ -1189,6 +1189,54 @@ public partial class MainWindow : Window
         }
     }
 
+    private void SafeFolder_Click(object sender, RoutedEventArgs e)
+    {
+        SafeFolderButton.IsEnabled = false;
+        SafeFolderStatus.Text = "Processando…";
+        try
+        {
+            if (SafeFolder.Open(out var err))
+                SafeFolderStatus.Text = $"Pasta: {SafeFolder.DefaultPath}";
+            else
+                SafeFolderStatus.Text = $"Falha: {err}";
+        }
+        catch (Exception ex)
+        {
+            SafeFolderStatus.Text = $"Falha: {ex.Message}";
+        }
+        finally
+        {
+            SafeFolderButton.IsEnabled = true;
+        }
+    }
+
+    private void RegDefrag_Click(object sender, RoutedEventArgs e)
+    {
+        RegDefragButton.IsEnabled = false;
+        RegDefragStatus.Text = "Medindo…";
+        try
+        {
+            var hive = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "NTUSER.DAT");
+            if (!File.Exists(hive))
+            {
+                RegDefragStatus.Text = "Hive não encontrado.";
+                return;
+            }
+            var info = new FileInfo(hive);
+            RegDefragStatus.Text = $"Hive: {CleanableItem.FormatBytes(info.Length)} ({hive}).";
+        }
+        catch (Exception ex)
+        {
+            RegDefragStatus.Text = $"Falha: {ex.Message}";
+        }
+        finally
+        {
+            RegDefragButton.IsEnabled = true;
+        }
+    }
+
     private static string FormatBoot(BootPerformance? boot) => boot is null
         ? "Indisponível"
         : $"{boot.BootDuration.TotalSeconds:N1} s (às {boot.BootTime:HH:mm})";

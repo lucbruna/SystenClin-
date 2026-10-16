@@ -586,6 +586,54 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Safe Folder -->
+                        <Border Background="{StaticResource PanelAlt}"
+                                BorderBrush="{StaticResource Line}" BorderThickness="1"
+                                CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Pasta segura (Safe Folder)"
+                                           FontSize="14.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Fg}" />
+                                <TextBlock Text="Cria uma pasta com ACLs restritivas: apenas o usuário atual tem acesso. Protege dados sensíveis contra outros usuários/processos."
+                                           FontSize="12.5" Foreground="{StaticResource Dim}"
+                                           TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Button x:Name="SafeFolderButton" Content="Criar / Abrir pasta segura"
+                                            Style="{StaticResource PrimaryButton}"
+                                            Padding="16,8" FontSize="12.5"
+                                            Click="SafeFolder_Click" />
+                                    <TextBlock x:Name="SafeFolderStatus" FontSize="12.5"
+                                               Foreground="{StaticResource Dim}"
+                                               TextWrapping="Wrap" Margin="12,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Registry Defrag (informativo) -->
+                        <Border Background="{StaticResource PanelAlt}"
+                                BorderBrush="{StaticResource Line}" BorderThickness="1"
+                                CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Desfragmentação do registro (informativo)"
+                                           FontSize="14.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Fg}" />
+                                <TextBlock Text="Mede o tamanho do hive do usuário. A compactação real do registro requer ferramentas offline e reinicialização; use a limpeza de registro acima para reduzir o tamanho."
+                                           FontSize="12.5" Foreground="{StaticResource Dim}"
+                                           TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Button x:Name="RegDefragButton" Content="Medir hive"
+                                            Style="{StaticResource PrimaryButton}"
+                                            Padding="16,8" FontSize="12.5"
+                                            Click="RegDefrag_Click" />
+                                    <TextBlock x:Name="RegDefragStatus" FontSize="12.5"
+                                               Foreground="{StaticResource Dim}"
+                                               TextWrapping="Wrap" Margin="12,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Destruição segura de arquivo -->
                         <Border Background="{StaticResource PanelAlt}"
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
