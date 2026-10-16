@@ -464,6 +464,40 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Quick Settings -->
+                        <Border Background="{StaticResource PanelAlt}"
+                                BorderBrush="{StaticResource Line}" BorderThickness="1"
+                                CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Configurações rápidas"
+                                           FontSize="14.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Fg}" />
+                                <TextBlock Text="Ajustes de UX e desempenho do Windows."
+                                           FontSize="12.5" Foreground="{StaticResource Dim}"
+                                           TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <CheckBox x:Name="QsShowExtensions" Content="Mostrar extensões de arquivo"
+                                          FontSize="12" Foreground="{StaticResource Dim}" Margin="0,8,0,0" IsChecked="True" />
+                                <CheckBox x:Name="QsShowHidden" Content="Mostrar arquivos ocultos"
+                                          FontSize="12" Foreground="{StaticResource Dim}" Margin="0,4,0,0" />
+                                <CheckBox x:Name="QsDarkMode" Content="Modo escuro do Windows"
+                                          FontSize="12" Foreground="{StaticResource Dim}" Margin="0,4,0,0" />
+                                <CheckBox x:Name="QsDisableAnimations" Content="Desabilitar animações (desempenho)"
+                                          FontSize="12" Foreground="{StaticResource Dim}" Margin="0,4,0,0" />
+                                <CheckBox x:Name="QsDisableTransparency" Content="Desabilitar transparência"
+                                          FontSize="12" Foreground="{StaticResource Dim}" Margin="0,4,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Button x:Name="QuickSettingsButton" Content="Aplicar"
+                                            Style="{StaticResource PrimaryButton}"
+                                            Padding="16,8" FontSize="12.5"
+                                            Click="QuickSettings_Click" />
+                                    <TextBlock x:Name="QuickSettingsStatus" FontSize="12.5"
+                                               Foreground="{StaticResource Dim}"
+                                               TextWrapping="Wrap" Margin="12,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Destruição segura de arquivo -->
                         <Border Background="{StaticResource PanelAlt}"
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"

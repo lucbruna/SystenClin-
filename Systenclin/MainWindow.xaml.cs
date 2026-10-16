@@ -1058,6 +1058,32 @@ public partial class MainWindow : Window
         }
     }
 
+    private void QuickSettings_Click(object sender, RoutedEventArgs e)
+    {
+        QuickSettingsButton.IsEnabled = false;
+        QuickSettingsStatus.Text = "Aplicando…";
+        try
+        {
+            var r = QuickSettings.Apply(
+                QsShowExtensions.IsChecked == true,
+                QsShowHidden.IsChecked == true,
+                QsDarkMode.IsChecked == true,
+                QsDisableAnimations.IsChecked == true,
+                QsDisableTransparency.IsChecked == true);
+            QuickSettingsStatus.Text = r.Success
+                ? $"Concluído: {r.Applied} ajuste(s) aplicado(s)."
+                : $"Falha: {r.Error}";
+        }
+        catch (Exception ex)
+        {
+            QuickSettingsStatus.Text = $"Falha: {ex.Message}";
+        }
+        finally
+        {
+            QuickSettingsButton.IsEnabled = true;
+        }
+    }
+
     private static string FormatBoot(BootPerformance? boot) => boot is null
         ? "Indisponível"
         : $"{boot.BootDuration.TotalSeconds:N1} s (às {boot.BootTime:HH:mm})";
