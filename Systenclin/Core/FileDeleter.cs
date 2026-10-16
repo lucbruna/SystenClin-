@@ -200,25 +200,33 @@ public static class FileDeleter
     /// do alvo for um ponto de reparse. Fail-closed: sem leitura dos atributos,
     /// presume que é vínculo e recusa (espelha DirectoryMeasurer).
     /// </summary>
-    private static bool HasReparseAncestor(string path)
+    private static bool HasReparseAncestor(string path) => HasReparseAncestor(path, null);
+
+    /// <summary>
+    /// Igual ao anterior, mas aceita um memo por lote (<paramref name="verified"/>):
+    /// guarda as pastas cujo caminho até a raiz já foi confirmado livre de
+    /// vínculos, para não repetir a caminhada em lotes com milhares de arquivos.
+    /// </summary>
+    private static bool HasReparseAncestor(string path, HashSet<string>? verified)
     {
         try
         {
             var full = Path.GetFullPath(path)
                 .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
-            var parent = Directory.GetParent(full);
-            if (parent is null)
-                return false;
-
-            // Do pai do alvo para cima, até (sem incluir) a raiz do volume.
-            var chain = new Stack<DirectoryInfo>();
-            for (var dir = parent; dir is not null && dir.Parent is not null; dir = dir.Parent)
-                chain.Push(dir);
-
-            while (chain.Count > 0)
+            // Coleta do pai do alvo para cima, até (sem incluir) a raiz do
+            // volume ou até topar uma pasta já verificada neste lote.
+            var toVerify = new List<DirectoryInfo>();
+            for (var dir = Directory.GetParent(full); dir is not null && dir.Parent is not null; dir = dir.Parent)
             {
-                var dir = chain.Pop();
+                if (verified is not null && verified.Contains(dir.FullName))
+                    break;
+
+                toVerify.Add(dir);
+            }
+
+            foreach (var dir in toVerify)
+            {
                 try
                 {
                     if ((dir.Attributes & FileAttributes.ReparsePoint) != 0)
@@ -231,11 +239,51 @@ public static class FileDeleter
                 }
             }
 
+            // Só marca como verificado depois de percorrer a cadeia inteira sem
+            // achar vínculo — senão gravaria uma pasta cujo topo é um vínculo.
+            if (verified is not null)
+                foreach (var dir in toVerify)
+                    verified.Add(dir.FullName);
+
             return false;
         }
         catch
         {
             return true;
         }
+    }
+
+    /// <summary>
+    /// Segunda linha de defesa antes de mandar à Lixeira um arquivo escolhido
+    /// pelo usuário: recusa quando o próprio arquivo é ponto de reparse ou quando
+    /// alguma pasta entre a raiz do volume e a pasta-mãe dele é junção/symlink —
+    /// reciclar seguiria o vínculo e agiria fora da árvore pretendida. Fail-closed.
+    /// <paramref name="verifiedAncestors"/> é o memo por lote da caminhada.
+    /// </summary>
+    internal static bool IsUnsafeToRecycle(string path, HashSet<string> verifiedAncestors, out string reason)
+    {
+        reason = string.Empty;
+
+        try
+        {
+            if ((new FileInfo(path).Attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                reason = "o arquivo é um vínculo (link simbólico)";
+                return true;
+            }
+        }
+        catch
+        {
+            reason = "não foi possível ler os atributos do arquivo";
+            return true;
+        }
+
+        if (HasReparseAncestor(path, verifiedAncestors))
+        {
+            reason = "alcançado por uma junção ou link simbólico";
+            return true;
+        }
+
+        return false;
     }
 }

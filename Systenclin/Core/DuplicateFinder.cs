@@ -162,13 +162,19 @@ public static class DuplicateFinder
     /// Manda os arquivos para a Lixeira, um a um. Devolve quantos foram reciclados.
     /// Falha individual não interrompe as demais, e nunca há queda para exclusão
     /// permanente: o que não puder ser reciclado simplesmente fica onde está.
+    /// Arquivo atrás de vínculo (junção/symlink) é recusado antes de tentar, com
+    /// o motivo entregue a <paramref name="onRefused"/> quando informado.
     /// </summary>
-    public static int RecycleFiles(IReadOnlyList<string> paths, CancellationToken ct = default)
+    public static int RecycleFiles(
+        IReadOnlyList<string> paths,
+        CancellationToken ct = default,
+        Action<string, string>? onRefused = null)
     {
         if (paths is null || paths.Count == 0)
             return 0;
 
         int recycled = 0;
+        var verifiedAncestors = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var path in paths)
         {
@@ -176,6 +182,14 @@ public static class DuplicateFinder
                 continue;
 
             ct.ThrowIfCancellationRequested();
+
+            // Segunda linha de defesa: reciclar através de um vínculo agiria fora
+            // da árvore pretendida. Recusa item a item, sem parar o lote.
+            if (FileDeleter.IsUnsafeToRecycle(path, verifiedAncestors, out var reason))
+            {
+                onRefused?.Invoke(path, reason);
+                continue;
+            }
 
             if (TryRecycle(path))
                 recycled++;

@@ -64,6 +64,14 @@ public sealed class PrivacyCleaner
     }
 
     /// <summary>
+    /// Mesma detecção de <see cref="RunningBrowsers"/>, mas roda fora da thread
+    /// de chamada. Use na UI para não prender a interface durante a enumeração
+    /// de processos; o cache curto de 1,5 s continua valendo.
+    /// </summary>
+    public static Task<IReadOnlyList<string>> RunningBrowsersAsync(CancellationToken ct = default)
+        => Task.Run(RunningBrowsers, ct);
+
+    /// <summary>
     /// Confere se o processo de um navegador está rodando. Falha FECHADO: se a
     /// enumeração falhar, trata como aberto — nunca escrever no banco de algo
     /// que pode estar em execução. <paramref name="fresh"/> = true ignora o
@@ -132,17 +140,24 @@ public sealed class PrivacyCleaner
                     // contados, nunca reportados como sucesso falso.
                     result = await Task.Run(() => CleanDiskItem(item, ct), ct).ConfigureAwait(false);
                 }
-                else if (IsBrowserRunning(item.Profile.Browser))
-                {
-                    // Banco SQLite de navegador aberto não pode ser tocado: ele
-                    // mantém o estado em memória e o banco corromperia.
-                    result = new Result(item, false, Skipped: true, 0, null,
-                        $"Feche o {item.Profile.Browser.DisplayName()} para limpar isto",
-                        DbPathFor(item));
-                }
                 else
                 {
-                    result = await Task.Run(() => CleanOne(item), ct).ConfigureAwait(false);
+                    // Detecção e limpeza rodam fora da thread da UI: enumerar
+                    // processos na thread de interface a prende sem necessidade.
+                    result = await Task.Run(() =>
+                    {
+                        if (IsBrowserRunning(item.Profile.Browser))
+                        {
+                            // Banco SQLite de navegador aberto não pode ser
+                            // tocado: ele mantém o estado em memória e o banco
+                            // corromperia.
+                            return new Result(item, false, Skipped: true, 0, null,
+                                $"Feche o {item.Profile.Browser.DisplayName()} para limpar isto",
+                                DbPathFor(item));
+                        }
+
+                        return CleanOne(item);
+                    }, ct).ConfigureAwait(false);
                 }
 
                 results.Add(result);
@@ -423,28 +438,30 @@ public sealed class PrivacyCleaner
         var outcome = item.Kind switch
         {
             PrivacyKind.BrowsingHistory when chromium => Exec(conn, tx,
-                ["delete from visits", "delete from urls"]),
+                [("visits", "delete from visits"), ("urls", "delete from urls")]),
 
             PrivacyKind.BrowsingHistory => Exec(conn, tx,
-                ["delete from moz_historyvisits", "delete from moz_places"]),
+                [("moz_historyvisits", "delete from moz_historyvisits"),
+                 ("moz_places", "delete from moz_places")]),
 
             PrivacyKind.Cookies when chromium => Exec(conn, tx,
-                ["delete from cookies"]),
+                [("cookies", "delete from cookies")]),
 
             PrivacyKind.Cookies => Exec(conn, tx,
-                ["delete from moz_cookies"]),
+                [("moz_cookies", "delete from moz_cookies")]),
 
             PrivacyKind.FormAutofill when chromium => Exec(conn, tx,
-                ["delete from autofill"]),
+                [("autofill", "delete from autofill")]),
 
             PrivacyKind.FormAutofill => Exec(conn, tx,
-                ["delete from moz_formhistory"]),
+                [("moz_formhistory", "delete from moz_formhistory")]),
 
             PrivacyKind.DownloadHistory => Exec(conn, tx,
-                ["delete from downloads", "delete from downloads_url_chains"]),
+                [("downloads", "delete from downloads"),
+                 ("downloads_url_chains", "delete from downloads_url_chains")]),
 
             PrivacyKind.SitePermissions => Exec(conn, tx,
-                ["delete from moz_perms"]),
+                [("moz_perms", "delete from moz_perms")]),
 
             _ => new DeleteOutcome(0, null),
         };
@@ -487,26 +504,29 @@ public sealed class PrivacyCleaner
 
     /// <summary>
     /// Executa os comandos de apagar. Tabela inexistente é benigna (versão do
-    /// navegador sem a tabela); qualquer outro erro é guardado e reportado ao
+    /// navegador sem a tabela) e é detectada de forma tipada, sem depender da
+    /// mensagem de erro do SQLite; qualquer outro erro é guardado e reportado ao
     /// chamador — nunca engolido. Os comandos restantes seguem executando.
     /// </summary>
-    private static DeleteOutcome Exec(SqliteConnection conn, SqliteTransaction tx, string[] statements)
+    private static DeleteOutcome Exec(
+        SqliteConnection conn,
+        SqliteTransaction tx,
+        (string Table, string Sql)[] statements)
     {
         int total = 0;
         string? firstError = null;
 
-        foreach (var sql in statements)
+        foreach (var (table, sql) in statements)
         {
+            if (!TableExists(conn, tx, table))
+                continue;
+
             try
             {
                 using var cmd = conn.CreateCommand();
                 cmd.Transaction = tx;
                 cmd.CommandText = sql;
                 total += cmd.ExecuteNonQuery();
-            }
-            catch (Exception ex) when (ex.Message.Contains("no such table", StringComparison.OrdinalIgnoreCase))
-            {
-                // Tabela pode não existir nesta versão do navegador.
             }
             catch (Exception ex)
             {
@@ -515,6 +535,19 @@ public sealed class PrivacyCleaner
         }
 
         return new DeleteOutcome(total, firstError);
+    }
+
+    /// <summary>
+    /// Confere se a tabela existe no esquema. Consultar sqlite_master é estável;
+    /// casar a mensagem "no such table" depende de idioma e de versão do SQLite.
+    /// </summary>
+    private static bool TableExists(SqliteConnection conn, SqliteTransaction tx, string table)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = "select 1 from sqlite_master where type = 'table' and name = $name limit 1";
+        cmd.Parameters.AddWithValue("$name", table);
+        return cmd.ExecuteScalar() is not null;
     }
 
     private static string Sanitize(string name)

@@ -224,6 +224,9 @@ try
     var privacyCleaner = new PrivacyCleaner();
     var running = PrivacyCleaner.RunningBrowsers();
 
+    Check("detecção de navegadores concorda fora da UI thread",
+        PrivacyCleaner.RunningBrowsersAsync().GetAwaiter().GetResult().SequenceEqual(running));
+
     Console.WriteLine($"        navegadores abertos agora: {(running.Count == 0 ? "nenhum" : string.Join(", ", running))}");
 
     // Um banco sintético, para exercitar backup + delete sem tocar em dado real.
@@ -297,6 +300,42 @@ try
         using var q = check.CreateCommand();
         q.CommandText = "select count(*) from urls";
         Check("registros voltaram após restaurar", Convert.ToInt32(q.ExecuteScalar()) == 2);
+    }
+
+    // Tabela ausente é benigna: apagar histórico de um banco SEM a tabela
+    // `moz_historyvisits` não pode fazer o item falhar (detecção tipada de esquema).
+    var partialDir = Path.Combine(sandbox + "-prof", "Parcial");
+    Directory.CreateDirectory(partialDir);
+    var partialDb = Path.Combine(partialDir, "places.sqlite");
+    {
+        using var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={partialDb}");
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            create table moz_places (id integer primary key, url text);
+            insert into moz_places values (1,'https://sem-visitas.com');
+            """;
+        cmd.ExecuteNonQuery();
+    }
+
+    var partialProfile = new BrowserProfile(BrowserKind.Firefox, "Parcial", partialDir);
+    var partialItem = new PrivacyItem
+    {
+        Kind = PrivacyKind.BrowsingHistory,
+        Profile = partialProfile,
+        RecordCount = 1,
+        SizeBytes = new FileInfo(partialDb).Length,
+        Preview = ["teste"],
+        PreviewOfTotal = 1,
+    };
+
+    if (!running.Contains(partialProfile.Browser.DisplayName()))
+    {
+        var partialResults = await new PrivacyCleaner().CleanAsync([partialItem]);
+        Check("tabela ausente não faz o item falhar",
+            partialResults[0].Succeeded, partialResults[0].Error);
+        Check("tabela presente ainda é limpa",
+            partialResults[0].RecordsRemoved == 1, $"removeu {partialResults[0].RecordsRemoved}");
     }
 
     // Cache: cada item representa UMA pasta de disco. Limpar um item não pode
@@ -605,6 +644,29 @@ try
         catch (OperationCanceledException) { folderCancelled = true; }
         Check("pastas: cancelamento lança", folderCancelled);
 
+        // ── Reciclagem segura (guarda contra vínculo) ─────────────────────
+        // Arquivo alcançado por junção ancestral é recusado ANTES de ir à
+        // Lixeira; nada é reciclado e o alvo fica intacto.
+        var rt = Path.Combine(ws16, "recycle-target");
+        Directory.CreateDirectory(rt);
+        var rtFile = Path.Combine(rt, "keep.bin");
+        File.WriteAllBytes(rtFile, new byte[123]);
+        var rlink = Path.Combine(ws16, "recycle-link");
+        MakeJunction(rlink, rt);
+
+        var refusals = new List<(string Path, string Reason)>();
+        int recycledViaLink = DuplicateFinder.RecycleFiles(
+            [Path.Combine(rlink, "keep.bin")],
+            onRefused: (p, r) => refusals.Add((p, r)));
+
+        Check("reciclagem recusa arquivo atrás de junção",
+            recycledViaLink == 0 && refusals.Count == 1,
+            $"{recycledViaLink} reciclado(s), {refusals.Count} recusa(s)");
+        Check("reciclagem explica o motivo da recusa",
+            refusals.Count == 1 && refusals[0].Reason.Length > 0,
+            refusals.Count == 1 ? refusals[0].Reason : "sem motivo");
+        Check("arquivo atrás de junção permanece intacto", File.Exists(rtFile));
+
         // ── DiskOptimizer ─────────────────────────────────────────────────
         var media = DiskOptimizer.GetSystemDriveMediaType();
         Check("disco: tipo de mídia é um valor definido", Enum.IsDefined(media), media.ToString());
@@ -624,6 +686,7 @@ try
     {
         try { var l = Path.Combine(ws16, "large-root", "link"); if (Directory.Exists(l)) Directory.Delete(l); } catch { }
         try { var l = Path.Combine(ws16, "folder-root", "link"); if (Directory.Exists(l)) Directory.Delete(l); } catch { }
+        try { var l = Path.Combine(ws16, "recycle-link"); if (Directory.Exists(l)) Directory.Delete(l); } catch { }
         try { if (Directory.Exists(ws16)) Directory.Delete(ws16, true); } catch { }
     }
 }

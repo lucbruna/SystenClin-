@@ -20,6 +20,9 @@ public partial class MainWindow : Window
     private readonly PrivacyScanner _privacyScanner = new();
     private readonly PrivacyCleaner _privacyCleaner = new();
 
+    // Última leitura de navegadores abertos, atualizada fora da UI thread.
+    private IReadOnlyList<string> _runningBrowsers = [];
+
     private ObservableCollection<ItemRow> _fileRows = [];
     private ObservableCollection<ItemRow> _privacyRows = [];
 
@@ -305,7 +308,7 @@ public partial class MainWindow : Window
             ? "Privacidade dos navegadores"
             : "Limpeza de arquivos temporários";
 
-        UpdateBrowserWarning();
+        _ = UpdateBrowserWarning();
         RefreshView();
     }
 
@@ -314,7 +317,7 @@ public partial class MainWindow : Window
     /// cookies, formulários) não podem ser apagados com o navegador rodando.
     /// Cache e abas salvas são arquivos em disco e podem.
     /// </summary>
-    private void UpdateBrowserWarning()
+    private async Task UpdateBrowserWarning()
     {
         if (!IsPrivacyTab)
         {
@@ -322,7 +325,10 @@ public partial class MainWindow : Window
             return;
         }
 
-        var running = PrivacyCleaner.RunningBrowsers();
+        // Enumeração de processos fora da UI thread; o snapshot também alimenta
+        // o resumo da seleção (PrivacyNote) sem prender a interface.
+        var running = await PrivacyCleaner.RunningBrowsersAsync();
+        _runningBrowsers = running;
 
         if (running.Count == 0)
         {
@@ -523,7 +529,7 @@ public partial class MainWindow : Window
         var items = selected.Select(r => r.PrivacyItem!).ToList();
 
         // Itens de banco exigem navegador fechado — avisa antes, não depois.
-        var running = PrivacyCleaner.RunningBrowsers();
+        var running = await PrivacyCleaner.RunningBrowsersAsync();
         var blockedByRunning = items
             .Where(i => i.Kind is not (PrivacyKind.BrowserCache or PrivacyKind.SessionTabs)
                      && running.Contains(i.Profile.Browser.DisplayName()))
@@ -592,7 +598,7 @@ public partial class MainWindow : Window
                 MessageBox.Show(this, summary, "Limpeza de privacidade",
                     MessageBoxButton.OK, MessageBoxImage.Information);
 
-            UpdateBrowserWarning();
+            await UpdateBrowserWarning();
             UpdateBadges();
             ShowRestoreWarningIfAny();
         }
@@ -749,7 +755,7 @@ public partial class MainWindow : Window
     {
         if (selected.Count == 0) return "Histórico, cookies e formulários exigem o navegador fechado.";
 
-        var running = PrivacyCleaner.RunningBrowsers();
+        var running = _runningBrowsers;
         var blocked = selected.Count(i =>
             i.PrivacyItem!.Kind is not (PrivacyKind.BrowserCache or PrivacyKind.SessionTabs)
             && running.Contains(i.PrivacyItem.Profile.Browser.DisplayName()));

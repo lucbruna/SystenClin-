@@ -492,8 +492,12 @@ public sealed class PrivacyScanner
         string? temp = null;
         try
         {
-            using var db = OpenReadOnly(path, ct, out temp, out _);
-            if (db is null) return null;
+            using var db = OpenReadOnly(path, ct, out temp, out var error);
+            if (db is null) return Blocked(profile, PrivacyKind.SitePermissions, size, error);
+
+            // Tabela ausente é benigna (versão do Firefox sem permissões) e é
+            // detectada de forma tipada, não pela mensagem de erro do SQLite.
+            if (!TableExists(db, "moz_perms")) return null;
 
             int total = Scalar(db, "select count(*) from moz_perms");
             if (total == 0) return null;
@@ -532,9 +536,11 @@ public sealed class PrivacyScanner
                 PreviewOfTotal = total,
             };
         }
-        catch
+        catch (Exception ex)
         {
-            return null;
+            // Erro real de leitura (permissão, banco corrompido): não é "vazio",
+            // então aparece bloqueado com o motivo em vez de sumir em silêncio.
+            return Blocked(profile, PrivacyKind.SitePermissions, size, ex.Message);
         }
         finally
         {
@@ -649,6 +655,18 @@ public sealed class PrivacyScanner
         cmd.CommandText = sql;
         var result = cmd.ExecuteScalar();
         return result is null or DBNull ? 0 : Convert.ToInt32(result, CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// Confere se a tabela existe no esquema. Consultar sqlite_master é estável;
+    /// casar a mensagem "no such table" depende de idioma e de versão do SQLite.
+    /// </summary>
+    private static bool TableExists(SqliteConnection db, string table)
+    {
+        using var cmd = db.CreateCommand();
+        cmd.CommandText = "select 1 from sqlite_master where type = 'table' and name = $name limit 1";
+        cmd.Parameters.AddWithValue("$name", table);
+        return cmd.ExecuteScalar() is not null;
     }
 
     /// <summary>Microssegundos desde 1601-01-01 (Chromium).</summary>
