@@ -83,7 +83,17 @@ try
     Check("nenhum item é área proibida",
         items.All(i => ScanTargets.IsSafeToDelete(i.Path, out _)),
         string.Join(", ", items.Where(i => !ScanTargets.IsSafeToDelete(i.Path, out _)).Select(i => i.Path)));
-    Check("todo item tem tamanho > 0", items.All(i => i.SizeBytes > 0));
+    // Tamanho coerente: arquivo tem bytes reais e conta 1; pasta pode medir 0 B
+    // (só arquivos vazios dentro) mas sempre conta ao menos 1 arquivo.
+    Check("todo item tem tamanho coerente",
+        items.All(i => i.IsDirectory
+            ? i.SizeBytes >= 0 && i.FileCount >= 1
+            : i.SizeBytes > 0 && i.FileCount == 1),
+        string.Join(", ", items
+            .Where(i => !(i.IsDirectory
+                ? i.SizeBytes >= 0 && i.FileCount >= 1
+                : i.SizeBytes > 0 && i.FileCount == 1))
+            .Select(i => i.Path)));
 
     var cleaner = new Cleaner();
     var fake = new CleanableItem
@@ -249,8 +259,11 @@ try
         cmd.ExecuteNonQuery();
     }
 
-    // Perfil sintético: usamos o construtor direto porque não há navegador real aqui.
-    var profile = profiles.FirstOrDefault() ?? new BrowserProfile(BrowserKind.Chrome, "Teste", fakeProfileDir);
+    // Perfil sintético: o banco acima tem esquema Chromium (urls/visits), então
+    // precisamos de um perfil Chromium descoberto — com um perfil Firefox a
+    // limpeza miraria as tabelas moz_* e não acharia nada.
+    var profile = profiles.FirstOrDefault(p => p.Browser is BrowserKind.Chrome or BrowserKind.Edge)
+        ?? new BrowserProfile(BrowserKind.Edge, "Teste", fakeProfileDir);
 
     var synthProfile = profile with { ProfileDirectory = fakeProfileDir };
 
@@ -277,7 +290,7 @@ try
     {
         Check("limpeza de banco funcionou", results[0].Succeeded, results[0].Error);
         Check("backup foi criado", results[0].BackupPath is not null && File.Exists(results[0].BackupPath));
-        Check("removeu os registros", results[0].RecordsRemoved == 2, $"removeu {results[0].RecordsRemoved}");
+        Check("removeu os registros", results[0].RecordsRemoved == 3, $"removeu {results[0].RecordsRemoved}"); // 2 urls + 1 visits
 
         // Confere que o banco está vazio de verdade.
         using var check = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={fakeDb}");
@@ -285,6 +298,9 @@ try
         using var q = check.CreateCommand();
         q.CommandText = "select count(*) from urls";
         Check("banco ficou vazio", Convert.ToInt32(q.ExecuteScalar()) == 0);
+
+        q.CommandText = "select count(*) from visits";
+        Check("tabela de visitas também ficou vazia", Convert.ToInt32(q.ExecuteScalar()) == 0);
 
         Check("backup é listado", PrivacyCleaner.ListBackups().Count > backupsBefore);
     }
@@ -300,6 +316,9 @@ try
         using var q = check.CreateCommand();
         q.CommandText = "select count(*) from urls";
         Check("registros voltaram após restaurar", Convert.ToInt32(q.ExecuteScalar()) == 2);
+
+        q.CommandText = "select count(*) from visits";
+        Check("visitas voltaram após restaurar", Convert.ToInt32(q.ExecuteScalar()) == 1);
     }
 
     // Tabela ausente é benigna: apagar histórico de um banco SEM a tabela
