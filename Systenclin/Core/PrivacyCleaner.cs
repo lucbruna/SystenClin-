@@ -249,57 +249,38 @@ public sealed class PrivacyCleaner
 
         try
         {
-            // Cache do Chromium tem vários diretórios por perfil (HTTP, código,
-            // GPU, mídia, service worker); sessões têm um só.
-            List<string> paths;
-            if (item.Kind == PrivacyKind.BrowserCache)
-            {
-                paths = item.Profile.CachePaths.Where(Directory.Exists).ToList();
-            }
-            else
-            {
-                var sessions = item.Profile.SessionsPath;
-                paths = sessions is not null && Directory.Exists(sessions) ? [sessions] : [];
-            }
+            // Cada item de disco representa UMA pasta (ver ScanCache/ScanSessions).
+            // A pasta vem no próprio item: apagar pelo perfil inteiro removeria
+            // caches que o usuário não marcou, além de contar arquivos a mais.
+            var path = item.DirectoryPath;
 
-            if (paths.Count == 0)
+            if (path is null || !Directory.Exists(path))
                 return item.RecordCount > 0
                     ? new Result(item, false, false, 0, null,
                         "nada encontrado para apagar (a pasta pode ter sido removida por outro programa)",
                         item.Profile.ProfileDirectory)
                     : new Result(item, true, false, 0, null, null, item.Profile.ProfileDirectory);
 
-            foreach (var path in paths)
-            {
-                if (!ScanTargets.IsSafeToDelete(path, out var reason))
-                    return new Result(item, false, false, 0, null, $"Recusado: {reason}", path);
-            }
+            if (!ScanTargets.IsSafeToDelete(path, out var reason))
+                return new Result(item, false, false, 0, null, $"Recusado: {reason}", path);
 
-            int deleted = 0, skipped = 0, dirsLeft = 0;
-            string? refusal = null;
-            foreach (var path in paths)
-            {
-                var outcome = FileDeleter.DeleteTree(path, ct);
-                deleted += outcome.FilesDeleted;
-                skipped += outcome.FilesSkipped;
-                dirsLeft += outcome.DirsLeftBehind;
-                refusal ??= outcome.Error;
-            }
+            var outcome = FileDeleter.DeleteTree(path, ct);
+            int deleted = outcome.FilesDeleted;
+            int skipped = outcome.FilesSkipped;
+            int dirsLeft = outcome.DirsLeftBehind;
 
-            var touched = string.Join("; ", paths);
-
-            if (refusal is not null)
-                return new Result(item, false, false, deleted, null, refusal, touched);
+            if (outcome.Error is not null)
+                return new Result(item, false, false, deleted, null, outcome.Error, path);
 
             if (skipped == 0 && dirsLeft == 0)
-                return new Result(item, true, false, deleted, null, null, touched);
+                return new Result(item, true, false, deleted, null, null, path);
 
             var error = ct.IsCancellationRequested
                 ? $"Cancelado: {deleted} arquivo(s) removidos; {skipped + dirsLeft} pendente(s)"
                 : $"Parcial: {skipped} arquivo(s) em uso" +
                   (dirsLeft > 0 ? $" e {dirsLeft} pasta(s) restante(s)" : "");
 
-            return new Result(item, false, false, deleted, null, error, touched);
+            return new Result(item, false, false, deleted, null, error, path);
         }
         catch (Exception ex)
         {
@@ -467,6 +448,25 @@ public sealed class PrivacyCleaner
 
             _ => new DeleteOutcome(0, null),
         };
+
+        // Falha parcial: desfaz a transação para que o resultado relatado bata
+        // com o que ficou no banco. Sem isso, parte dos registros sairia e o
+        // item ainda seria reportado como falha — estado ambíguo e enganoso.
+        if (outcome.FirstError is not null)
+        {
+            try
+            {
+                tx.Rollback();
+                // Nada persistiu: reporta zero removidos, coerente com o banco.
+                return new DeleteOutcome(0, outcome.FirstError);
+            }
+            catch
+            {
+                // Rollback falhou (melhor esforço): não dá para garantir o
+                // estado, então reporta o que foi tentado.
+                return outcome;
+            }
+        }
 
         tx.Commit();
 

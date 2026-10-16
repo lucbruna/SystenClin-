@@ -561,6 +561,7 @@ public sealed class PrivacyScanner
             {
                 Kind = PrivacyKind.BrowserCache,
                 Profile = profile,
+                DirectoryPath = path,
                 RecordCount = measured.FileCount,
                 SizeBytes = measured.SizeBytes,
                 Preview =
@@ -586,6 +587,7 @@ public sealed class PrivacyScanner
         {
             Kind = PrivacyKind.SessionTabs,
             Profile = profile,
+            DirectoryPath = path,
             RecordCount = measured.FileCount,
             SizeBytes = measured.SizeBytes,
             Preview =

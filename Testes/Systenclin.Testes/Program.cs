@@ -299,6 +299,35 @@ try
         Check("registros voltaram após restaurar", Convert.ToInt32(q.ExecuteScalar()) == 2);
     }
 
+    // Cache: cada item representa UMA pasta de disco. Limpar um item não pode
+    // tocar nas outras pastas de cache do mesmo perfil (achado de granularidade).
+    var cacheProfileDir = Path.Combine(sandbox + "-prof", "cache-gran");
+    var cacheA = Path.Combine(cacheProfileDir, "Cache");
+    var cacheB = Path.Combine(cacheProfileDir, "Media Cache");
+    Directory.CreateDirectory(cacheA);
+    Directory.CreateDirectory(cacheB);
+    File.WriteAllBytes(Path.Combine(cacheA, "c1.bin"), new byte[100]);
+    File.WriteAllBytes(Path.Combine(cacheA, "c2.bin"), new byte[100]);
+    File.WriteAllBytes(Path.Combine(cacheB, "m1.bin"), new byte[100]);
+
+    var cacheProfile = new BrowserProfile(BrowserKind.Chrome, "CacheTeste", cacheProfileDir);
+    var cacheItem = new PrivacyItem
+    {
+        Kind = PrivacyKind.BrowserCache,
+        Profile = cacheProfile,
+        DirectoryPath = cacheA,
+        RecordCount = 2,
+        SizeBytes = 200,
+    };
+
+    var cacheResults = await new PrivacyCleaner().CleanAsync([cacheItem]);
+    Check("cache: limpa só a pasta do item",
+        cacheResults[0].Succeeded && !Directory.Exists(cacheA), cacheResults[0].Error);
+    Check("cache: não toca nas outras pastas do perfil",
+        Directory.Exists(cacheB) && File.Exists(Path.Combine(cacheB, "m1.bin")));
+    Check("cache: contagem cobre só a pasta do item",
+        cacheResults[0].RecordsRemoved == 2, $"removeu {cacheResults[0].RecordsRemoved}");
+
     // ══════════════════════════════════════════════════════════════════════
     Section("8. Formatação e histórico");
     // ══════════════════════════════════════════════════════════════════════

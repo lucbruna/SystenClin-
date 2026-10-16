@@ -82,6 +82,13 @@ public sealed class PrivacyItem
     public required PrivacyKind Kind { get; init; }
     public required BrowserProfile Profile { get; init; }
 
+    /// <summary>
+    /// Pasta específica deste item quando ele representa uma pasta de disco
+    /// (cache ou sessões). Um item = uma pasta: a limpeza apaga só esta, nunca
+    /// todas as pastas de cache do perfil.
+    /// </summary>
+    public string? DirectoryPath { get; init; }
+
     /// <summary>Registros que serão removidos.</summary>
     public int RecordCount { get; init; }
 
