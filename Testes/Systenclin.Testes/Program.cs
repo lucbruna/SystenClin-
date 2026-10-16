@@ -464,6 +464,168 @@ try
         try { var l = Path.Combine(ws, "D-link"); if (Directory.Exists(l)) Directory.Delete(l); } catch { }
         try { if (Directory.Exists(ws)) Directory.Delete(ws, true); } catch { }
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    Section("10. Scanners destrutivos: duplicados, grandes, pastas, disco");
+    // ══════════════════════════════════════════════════════════════════════
+
+    var ws16 = Path.Combine(Path.GetTempPath(), "opencode", "systenclin-sc-" + Guid.NewGuid().ToString("N")[..8]);
+    Directory.CreateDirectory(ws16);
+
+    try
+    {
+        // ── DuplicateFinder ────────────────────────────────────────────────
+        var dup = Path.Combine(ws16, "dup");
+        Directory.CreateDirectory(dup);
+        var d1 = Path.Combine(dup, "a.bin");
+        var d2 = Path.Combine(dup, "b.bin");
+        var d3 = Path.Combine(dup, "c.bin");
+        File.WriteAllBytes(d1, new byte[200]);
+        File.WriteAllBytes(d2, new byte[200]);
+        var cBytes = new byte[200];
+        cBytes[0] = 1;
+        File.WriteAllBytes(d3, cBytes);
+
+        var dupGroups = DuplicateFinder.Find(dup, minimumFileSizeBytes: 100);
+        Check("duplicados: idênticos formam grupo de 2",
+            dupGroups.Count == 1 && dupGroups[0].Files.Count == 2, $"{dupGroups.Count} grupo(s)");
+        Check("duplicados: um byte de diferença não agrupa",
+            !dupGroups.Any(g => g.Files.Any(f => f.Path == d3)), "c.bin entrou no grupo");
+
+        // Limite: no tamanho mínimo entra; um byte abaixo fica fora.
+        var edge = Path.Combine(ws16, "edge");
+        Directory.CreateDirectory(edge);
+        File.WriteAllBytes(Path.Combine(edge, "e1.bin"), new byte[100]);
+        File.WriteAllBytes(Path.Combine(edge, "e2.bin"), new byte[100]);
+        Check("duplicados: no limite entra", DuplicateFinder.Find(edge, 100).Count == 1);
+        Check("duplicados: abaixo do limite fica fora", DuplicateFinder.Find(edge, 101).Count == 0);
+
+        // Cancelamento lança (contrato implementado em DuplicateFinder).
+        bool dupCancelled = false;
+        try { DuplicateFinder.Find(dup, 100, ct: new CancellationToken(canceled: true)); }
+        catch (OperationCanceledException) { dupCancelled = true; }
+        Check("duplicados: cancelamento lança", dupCancelled);
+
+        // Arquivo sumindo no meio (aqui, logo após a fase de candidatos): não quebra.
+        var gone = Path.Combine(ws16, "gone");
+        Directory.CreateDirectory(gone);
+        var g1 = Path.Combine(gone, "g1.bin");
+        File.WriteAllBytes(g1, new byte[500]);
+        File.WriteAllBytes(Path.Combine(gone, "g2.bin"), new byte[500]);
+        bool goneDeleted = false;
+        var killer = new SyncProgress<string>(_ =>
+        {
+            if (!goneDeleted) { goneDeleted = true; try { File.Delete(g1); } catch { } }
+        });
+        var goneGroups = DuplicateFinder.Find(gone, 100, killer);
+        Check("duplicados: arquivo sumindo no meio não quebra",
+            goneDeleted && goneGroups.Count == 0, $"{goneGroups.Count} grupo(s)");
+
+        // ── LargeFileFinder ───────────────────────────────────────────────
+        var large = Path.Combine(ws16, "large");
+        Directory.CreateDirectory(large);
+        File.WriteAllBytes(Path.Combine(large, "s10.bin"), new byte[10]);
+        File.WriteAllBytes(Path.Combine(large, "s30.bin"), new byte[30]);
+        File.WriteAllBytes(Path.Combine(large, "s20.bin"), new byte[20]);
+
+        var minFiltered = LargeFileFinder.Find(large, minSizeBytes: 20);
+        Check("grandes: filtro de tamanho mínimo respeitado",
+            minFiltered.Count == 2 && minFiltered.All(f => f.Size >= 20), $"{minFiltered.Count} arquivo(s)");
+
+        var ordered = LargeFileFinder.Find(large, minSizeBytes: 1);
+        Check("grandes: ordenados por tamanho desc",
+            ordered.Count == 3 && ordered[0].Size == 30 && ordered[1].Size == 20 && ordered[2].Size == 10);
+
+        // Reparse de primeiro nível: o alvo não é atravessado.
+        var lt = Path.Combine(ws16, "large-target");
+        Directory.CreateDirectory(lt);
+        File.WriteAllBytes(Path.Combine(lt, "big.bin"), new byte[999]);
+        var lroot = Path.Combine(ws16, "large-root");
+        Directory.CreateDirectory(lroot);
+        MakeJunction(Path.Combine(lroot, "link"), lt);
+        var jl = LargeFileFinder.Find(lroot, minSizeBytes: 1);
+        Check("grandes: não atravessa junção",
+            jl.Count == 0 && File.Exists(Path.Combine(lt, "big.bin")));
+
+        bool largeCancelled = false;
+        try { LargeFileFinder.Find(large, 1, ct: new CancellationToken(canceled: true)); }
+        catch (OperationCanceledException) { largeCancelled = true; }
+        Check("grandes: cancelamento lança", largeCancelled);
+
+        // Limite MaxItems (cap real = 2000): 2001 arquivos → devolve 2000 maiores.
+        var cap = Path.Combine(ws16, "cap");
+        Directory.CreateDirectory(cap);
+        for (int i = 0; i < 2001; i++)
+            File.WriteAllBytes(Path.Combine(cap, $"f{i:D4}.bin"), new byte[i + 1]);
+        var capped = LargeFileFinder.Find(cap, minSizeBytes: 1);
+        Check("grandes: respeita o limite de 2000 itens",
+            capped.Count == 2000 && capped.Count > 0 && capped[^1].Size == 2,
+            $"{capped.Count} itens, menor {(capped.Count > 0 ? capped[^1].Size : 0)}");
+
+        // ── FolderAnalyzer ────────────────────────────────────────────────
+        var fa = Path.Combine(ws16, "folders");
+        Directory.CreateDirectory(Path.Combine(fa, "A"));
+        Directory.CreateDirectory(Path.Combine(fa, "B"));
+        Directory.CreateDirectory(Path.Combine(fa, "C"));
+        File.WriteAllBytes(Path.Combine(fa, "A", "a.bin"), new byte[10]);
+        File.WriteAllBytes(Path.Combine(fa, "B", "b.bin"), new byte[30]);
+        File.WriteAllBytes(Path.Combine(fa, "C", "c.bin"), new byte[20]);
+        File.WriteAllBytes(Path.Combine(fa, "loose1.bin"), new byte[5]);
+        File.WriteAllBytes(Path.Combine(fa, "loose2.bin"), new byte[5]);
+
+        var analysis = FolderAnalyzer.Analyze(fa);
+        Check("pastas: filhos ordenados por tamanho desc",
+            analysis.Children.Count == 3 && analysis.Children[0].Name == "B"
+            && analysis.Children[1].Name == "C" && analysis.Children[2].Name == "A",
+            string.Join(", ", analysis.Children.Select(c => c.Name)));
+        Check("pastas: arquivos soltos contam no total",
+            analysis.LooseFiles == 2 && analysis.LooseBytes == 10
+            && analysis.TotalBytes == 70 && analysis.TotalFiles == 5,
+            $"soltos {analysis.LooseFiles}/{analysis.LooseBytes}; total {analysis.TotalFiles}/{analysis.TotalBytes}");
+
+        var emptyDir = Path.Combine(ws16, "empty");
+        Directory.CreateDirectory(emptyDir);
+        var emptyAnalysis = FolderAnalyzer.Analyze(emptyDir);
+        Check("pastas: pasta vazia totaliza zero",
+            emptyAnalysis.TotalBytes == 0 && emptyAnalysis.TotalFiles == 0 && emptyAnalysis.Children.Count == 0);
+
+        // Junção de primeiro nível: fora de Children e do total.
+        var ft = Path.Combine(ws16, "folder-target");
+        Directory.CreateDirectory(ft);
+        File.WriteAllBytes(Path.Combine(ft, "big.bin"), new byte[1234]);
+        var froot = Path.Combine(ws16, "folder-root");
+        Directory.CreateDirectory(froot);
+        MakeJunction(Path.Combine(froot, "link"), ft);
+        var faJunction = FolderAnalyzer.Analyze(froot);
+        Check("pastas: junção de primeiro nível fica fora",
+            faJunction.Children.Count == 0 && faJunction.TotalBytes == 0);
+
+        bool folderCancelled = false;
+        try { FolderAnalyzer.Analyze(fa, ct: new CancellationToken(canceled: true)); }
+        catch (OperationCanceledException) { folderCancelled = true; }
+        Check("pastas: cancelamento lança", folderCancelled);
+
+        // ── DiskOptimizer ─────────────────────────────────────────────────
+        var media = DiskOptimizer.GetSystemDriveMediaType();
+        Check("disco: tipo de mídia é um valor definido", Enum.IsDefined(media), media.ToString());
+
+        if (!ScanTargets.IsElevated)
+        {
+            var opt = DiskOptimizer.OptimizeSystemDrive();
+            Check("disco: sem elevação devolve erro amigável",
+                !opt.Success && !string.IsNullOrEmpty(opt.Error), opt.Error);
+        }
+        else
+        {
+            Console.WriteLine("        (elevado: caminho de otimização sem elevação não testável)");
+        }
+    }
+    finally
+    {
+        try { var l = Path.Combine(ws16, "large-root", "link"); if (Directory.Exists(l)) Directory.Delete(l); } catch { }
+        try { var l = Path.Combine(ws16, "folder-root", "link"); if (Directory.Exists(l)) Directory.Delete(l); } catch { }
+        try { if (Directory.Exists(ws16)) Directory.Delete(ws16, true); } catch { }
+    }
 }
 finally
 {
@@ -476,3 +638,10 @@ Console.WriteLine($"  {passed} passaram · {failed} falharam");
 Console.WriteLine(new string('─', 66));
 
 return failed == 0 ? 0 : 1;
+
+// IProgress que dispara o callback na hora; o Progress<T> padrão despacha para
+// outra thread e tornaria não determinístico o teste de "arquivo sumindo".
+file sealed class SyncProgress<T>(Action<T> onReport) : IProgress<T>
+{
+    public void Report(T value) => onReport(value);
+}
