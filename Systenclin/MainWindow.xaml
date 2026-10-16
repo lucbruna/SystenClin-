@@ -413,6 +413,30 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Destruição segura de arquivo -->
+                        <Border Background="{StaticResource PanelAlt}"
+                                BorderBrush="{StaticResource Line}" BorderThickness="1"
+                                CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Destruição segura de arquivo"
+                                           FontSize="14.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Fg}" />
+                                <TextBlock Text="Sobrescreve o arquivo 3 vezes (DoD 5220.22-M) antes de apagar, dificultando a recuperação. Escolha o arquivo."
+                                           FontSize="12.5" Foreground="{StaticResource Dim}"
+                                           TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Button x:Name="SecureDeleteButton" Content="Escolher e destruir…"
+                                            Style="{StaticResource PrimaryButton}"
+                                            Padding="16,8" FontSize="12.5"
+                                            Click="SecureDelete_Click" />
+                                    <TextBlock x:Name="SecureDeleteStatus" FontSize="12.5"
+                                               Foreground="{StaticResource Dim}"
+                                               TextWrapping="Wrap" Margin="12,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Uso do sistema -->
                         <Border Background="{StaticResource PanelAlt}"
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"

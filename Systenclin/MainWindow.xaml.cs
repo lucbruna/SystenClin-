@@ -1025,6 +1025,39 @@ public partial class MainWindow : Window
             ? "Histórico: —"
             : "Histórico: " + string.Join(" • ", recent.Select(b => $"{b.BootDuration.TotalSeconds:N1} s"));
 
+    private async void SecureDelete_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Escolher arquivo para destruir",
+            Filter = "Todos os arquivos (*.*)|*.*",
+        };
+        if (dialog.ShowDialog(this) != true) return;
+
+        var path = dialog.FileName;
+        var confirm = MessageBox.Show(this,
+            $"Destruir permanentemente (irreversível):\n{path}\n\nContinuar?",
+            "Destruição segura", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.Yes) return;
+
+        SecureDeleteButton.IsEnabled = false;
+        SecureDeleteStatus.Text = "Destruindo…";
+        try
+        {
+            string err = "";
+            var result = await Task.Run(() => SecureDelete.Shred(path, 3, out err));
+            if (result)
+                SecureDeleteStatus.Text = "Arquivo destruído.";
+            else
+                SecureDeleteStatus.Text = $"Falha: {err}";
+        }
+        catch (Exception ex)
+        {
+            SecureDeleteStatus.Text = $"Falha: {ex.Message}";
+        }
+        finally { SecureDeleteButton.IsEnabled = true; }
+    }
+
     private async void StartupRefresh_Click(object sender, RoutedEventArgs e)
         => await LoadStartupListAsync();
 
