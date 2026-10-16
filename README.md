@@ -1,7 +1,6 @@
 # Systenclin
 
-Limpeza e otimização do Windows. Reconstruído a partir do estudo do
-Advanced SystemCare 19.6 — **sem reaproveitar código, assets ou marca**.
+Limpeza e otimização do Windows. Construído  — **sem reaproveitar código, assets ou marca**.
 
 ## Estado
 
