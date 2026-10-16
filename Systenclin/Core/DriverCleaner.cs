@@ -4,8 +4,9 @@ namespace Systenclin.Core;
 
 /// <summary>
 /// Limpeza de drivers antigos: enumera os drivers de terceiros instalados no
-/// DriverStore (pnputil) e remove as versões antigas, mantendo a mais recente
-/// de cada fornecedor/classe. Libera espaço em disco e evita conflitos.
+/// DriverStore (pnputil) e remove apenas as versões antigas que não estão em
+/// uso por nenhum dispositivo, mantendo a mais recente de cada fornecedor/classe.
+/// Libera espaço em disco e evita conflitos.
 /// </summary>
 public static class DriverCleaner
 {
@@ -17,13 +18,19 @@ public static class DriverCleaner
         int removed = 0, kept = 0;
         try
         {
+            // Sem a lista de drivers em uso não se remove nada (fail-safe).
+            var used = GetUsedInfNames(ct);
+            if (used is null)
+                return new Result(false, 0, 0, "não foi possível verificar os drivers em uso; nada foi removido");
+
             var output = RunPnputil("/enum-drivers", ct);
             if (output is null) return new Result(false, 0, 0, "pnputil não disponível");
 
             var drivers = Parse(output);
             if (drivers.Count == 0) return new Result(true, 0, 0, null);
 
-            // Agrupa por (Provider, Class) e mantém o mais recente.
+            // Agrupa por (Provider, Class) e mantém o mais recente. As versões
+            // antigas só são removidas quando nenhum dispositivo as usa.
             var groups = drivers.GroupBy(d => (d.Provider, d.Class));
             foreach (var group in groups)
             {
@@ -35,6 +42,7 @@ public static class DriverCleaner
                 foreach (var old in ordered.Skip(1))
                 {
                     ct.ThrowIfCancellationRequested();
+                    if (used.Contains(old.PublishedName)) { kept++; continue; }
                     if (RemoveDriver(old.PublishedName, ct)) removed++;
                     else kept++;
                 }
@@ -49,6 +57,46 @@ public static class DriverCleaner
         catch (Exception ex)
         {
             return new Result(false, removed, kept, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Nomes (oemXX.inf) dos drivers em uso por algum dispositivo, via CIM.
+    /// Devolve null quando não for possível verificar — nesse caso nada é
+    /// removido. Lista vazia também vira null (indica falha silenciosa do CIM).
+    /// </summary>
+    private static HashSet<string>? GetUsedInfNames(CancellationToken ct)
+    {
+        try
+        {
+            var info = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = "-NoProfile -NonInteractive -Command \"Get-CimInstance Win32_PnPSignedDriver | Where-Object { $_.InfName } | Select-Object -ExpandProperty InfName\"",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            using var proc = new Process { StartInfo = info };
+            proc.Start();
+            using var reg = ct.Register(() => { try { proc.Kill(entireProcessTree: true); } catch { } });
+            var stdout = proc.StandardOutput.ReadToEnd();
+            _ = proc.StandardError.ReadToEnd();
+            proc.WaitForExit();
+            if (proc.ExitCode != 0) return null;
+
+            var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var line in stdout.Split('\n'))
+            {
+                var name = line.Trim();
+                if (name.Length > 0) used.Add(name);
+            }
+            return used.Count == 0 ? null : used;
+        }
+        catch
+        {
+            return null;
         }
     }
 
@@ -87,7 +135,8 @@ public static class DriverCleaner
             var info = new ProcessStartInfo
             {
                 FileName = "pnputil.exe",
-                Arguments = $"/delete-driver {publishedName} /uninstall /force",
+                // Sem /force: se o pacote ainda estiver em uso, o pnputil recusa e o driver é mantido.
+                Arguments = $"/delete-driver {publishedName}",
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,

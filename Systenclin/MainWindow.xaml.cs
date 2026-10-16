@@ -1237,36 +1237,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RegDefragSchedule_Click(object sender, RoutedEventArgs e)
-    {
-        RegDefragScheduleButton.IsEnabled = false;
-        RegDefragStatus.Text = "Agendando…";
-        try
-        {
-            var confirm = MessageBox.Show(this,
-                "Agendar compactação do registro na próxima reinicialização?\n\n" +
-                "O sistema será reiniciado. Continue?",
-                "Desfragmentação do registro", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (confirm != MessageBoxResult.Yes)
-            {
-                RegDefragStatus.Text = "Cancelado.";
-                return;
-            }
-            if (RegistryDefrag.ScheduleCompact(out var err))
-                RegDefragStatus.Text = "Agendado. Reinicie o computador.";
-            else
-                RegDefragStatus.Text = $"Falha: {err}";
-        }
-        catch (Exception ex)
-        {
-            RegDefragStatus.Text = $"Falha: {ex.Message}";
-        }
-        finally
-        {
-            RegDefragScheduleButton.IsEnabled = true;
-        }
-    }
-
     private static string FormatBoot(BootPerformance? boot) => boot is null
         ? "Indisponível"
         : $"{boot.BootDuration.TotalSeconds:N1} s (às {boot.BootTime:HH:mm})";

@@ -7,6 +7,8 @@ namespace Systenclin.Core;
 /// Destruição segura de arquivos (shredding): sobrescreve o conteúdo N vezes
 /// (zeros, uns e dados aleatórios) antes de apagar, dificultando a recuperação
 /// por ferramentas forenses. Segue o padrão DoD 5220.22-M (3 passagens).
+/// Nota: em SSDs com TRIM/wear leveling a sobrescrita física não é garantida;
+/// o benefício é pleno em HDDs.
 /// </summary>
 public static class SecureDelete
 {

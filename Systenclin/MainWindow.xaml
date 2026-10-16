@@ -610,7 +610,7 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Registry Defrag (informativo) -->
+                        <!-- Registry Defrag (somente medição — a substituição agendada do hive no boot foi removida: podia corromper o perfil) -->
                         <Border Background="{StaticResource PanelAlt}"
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
@@ -626,11 +626,6 @@
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="16,8" FontSize="12.5"
                                             Click="RegDefrag_Click" />
-                                    <Button x:Name="RegDefragScheduleButton" Content="Agendar compactação"
-                                            Style="{StaticResource GhostButton}"
-                                            Padding="14,7" FontSize="12.5"
-                                            Margin="10,0,0,0"
-                                            Click="RegDefragSchedule_Click" />
                                     <TextBlock x:Name="RegDefragStatus" FontSize="12.5"
                                                Foreground="{StaticResource Dim}"
                                                TextWrapping="Wrap" Margin="12,0,0,0"

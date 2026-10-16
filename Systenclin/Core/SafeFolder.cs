@@ -7,8 +7,8 @@ namespace Systenclin.Core;
 
 /// <summary>
 /// Cria uma pasta protegida (Safe Folder) com ACLs restritivas: apenas o
-/// usuário atual tem acesso total; outros usuários e processos não elevados
-/// são bloqueados. Ajuda a proteger dados sensíveis contra acesso não autorizado.
+/// usuário atual, SYSTEM e Administradores têm acesso total; outros usuários
+/// e processos não elevados são bloqueados. Ajuda a proteger dados sensíveis.
 /// </summary>
 public static class SafeFolder
 {
@@ -41,14 +41,29 @@ public static class SafeFolder
                 return false;
             }
 
-            var allowRule = new FileSystemAccessRule(
+            // Usuário atual, SYSTEM e Administradores. Sem SYSTEM/Administradores,
+            // backup, indexação e manutenção da pasta falham.
+            var inherit = InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
+
+            security.AddAccessRule(new FileSystemAccessRule(
                 currentUser,
                 FileSystemRights.FullControl,
-                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                inherit,
                 PropagationFlags.None,
-                AccessControlType.Allow);
+                AccessControlType.Allow));
+            security.AddAccessRule(new FileSystemAccessRule(
+                new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
+                FileSystemRights.FullControl,
+                inherit,
+                PropagationFlags.None,
+                AccessControlType.Allow));
+            security.AddAccessRule(new FileSystemAccessRule(
+                new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
+                FileSystemRights.FullControl,
+                inherit,
+                PropagationFlags.None,
+                AccessControlType.Allow));
 
-            security.AddAccessRule(allowRule);
             dirInfo.SetAccessControl(security);
 
             return true;
@@ -65,10 +80,9 @@ public static class SafeFolder
         error = string.Empty;
         try
         {
-            if (!Directory.Exists(DefaultPath))
-            {
-                if (!Create(out error, out _)) return false;
-            }
+            // Reaplica a política de ACLs também em pasta existente
+            // (corrige pastas criadas antes desta correção).
+            if (!Create(out error, out _)) return false;
             Process.Start(new ProcessStartInfo
             {
                 FileName = DefaultPath,
