@@ -922,6 +922,99 @@ public partial class MainWindow : Window
         }
     }
 
+    private bool _winsxsBusy;
+    private CancellationTokenSource? _winsxsCts;
+
+    private async void WinSxS_Clean_Click(object sender, RoutedEventArgs e)
+    {
+        if (_winsxsBusy) return;
+
+        if (!ScanTargets.IsElevated)
+        {
+            WinSxSStatus.Text = "Esta operação exige administrador. Reabra o Systenclin como administrador.";
+            WinSxSStatus.Visibility = Visibility.Visible;
+            return;
+        }
+
+        _winsxsBusy = true;
+        _winsxsCts = new CancellationTokenSource();
+        var ct = _winsxsCts.Token;
+
+        WinSxSCleanButton.IsEnabled = false;
+        WinSxSCancelButton.Visibility = Visibility.Visible;
+        WinSxSProgress.Visibility = Visibility.Visible;
+        WinSxSStatus.Text = "Executando DISM… pode levar vários minutos.";
+        WinSxSStatus.Visibility = Visibility.Visible;
+
+        bool deep = WinSxSDeepCheck.IsChecked == true;
+        string args = deep
+            ? "/Online /Cleanup-Image /StartComponentCleanup /ResetBase"
+            : "/Online /Cleanup-Image /StartComponentCleanup";
+
+        try
+        {
+            var result = await Task.Run(() =>
+            {
+                var info = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "dism.exe",
+                    Arguments = args,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    StandardOutputEncoding = System.Text.Encoding.UTF8,
+                };
+                using var proc = new System.Diagnostics.Process { StartInfo = info };
+                proc.Start();
+                using var reg = ct.Register(() => { try { proc.Kill(entireProcessTree: true); } catch { } });
+                var stdout = proc.StandardOutput.ReadToEnd();
+                var stderr = proc.StandardError.ReadToEnd();
+                proc.WaitForExit();
+                return (proc.ExitCode, stdout, stderr);
+            }, ct);
+
+            if (ct.IsCancellationRequested)
+            {
+                WinSxSStatus.Text = "Operação cancelada.";
+                return;
+            }
+
+            if (result.ExitCode == 0)
+            {
+                WinSxSStatus.Text = "Limpeza concluída com sucesso.";
+            }
+            else
+            {
+                var tail = (result.stderr.Length > 0 ? result.stderr : result.stdout);
+                if (tail.Length > 600) tail = tail[^600..];
+                WinSxSStatus.Text = $"DISM retornou código {result.ExitCode}. {tail}";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            WinSxSStatus.Text = "Operação cancelada.";
+        }
+        catch (Exception ex)
+        {
+            WinSxSStatus.Text = $"Falha ao executar DISM: {ex.Message}";
+        }
+        finally
+        {
+            _winsxsBusy = false;
+            _winsxsCts?.Dispose();
+            _winsxsCts = null;
+            WinSxSCleanButton.IsEnabled = true;
+            WinSxSCancelButton.Visibility = Visibility.Collapsed;
+            WinSxSProgress.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void WinSxS_Cancel_Click(object sender, RoutedEventArgs e)
+    {
+        try { _winsxsCts?.Cancel(); } catch { }
+    }
+
     private static string FormatBoot(BootPerformance? boot) => boot is null
         ? "Indisponível"
         : $"{boot.BootDuration.TotalSeconds:N1} s (às {boot.BootTime:HH:mm})";

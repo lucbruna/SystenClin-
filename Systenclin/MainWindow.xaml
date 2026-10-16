@@ -375,6 +375,44 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Componentes do Windows (WinSxS) -->
+                        <Border Background="{StaticResource PanelAlt}"
+                                BorderBrush="{StaticResource Line}" BorderThickness="1"
+                                CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Componentes do Windows (WinSxS)"
+                                           FontSize="14.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Fg}" />
+                                <TextBlock Text="Remove versões antigas de componentes do Windows já substituídas por atualizações. Pode liberar vários GB. Exige administrador."
+                                           FontSize="12.5" Foreground="{StaticResource Dim}"
+                                           TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <CheckBox x:Name="WinSxSDeepCheck" Content="Limpeza profunda (remove também a base de rollback — irreversível)"
+                                          FontSize="12" Foreground="{StaticResource Dim}"
+                                          Margin="0,10,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Button x:Name="WinSxSCleanButton" Content="Limpar componentes"
+                                            Style="{StaticResource PrimaryButton}"
+                                            Padding="16,8" FontSize="12.5"
+                                            Click="WinSxS_Clean_Click" />
+                                    <Button x:Name="WinSxSCancelButton" Content="Cancelar"
+                                            Style="{StaticResource GhostButton}"
+                                            Padding="14,7" FontSize="12.5"
+                                            Margin="10,0,0,0"
+                                            Visibility="Collapsed"
+                                            Click="WinSxS_Cancel_Click" />
+                                </StackPanel>
+                                <ProgressBar x:Name="WinSxSProgress" Height="4" Margin="0,10,0,0"
+                                             IsIndeterminate="True" Visibility="Collapsed"
+                                             Background="{StaticResource Bg}"
+                                             Foreground="{StaticResource Accent}"
+                                             BorderThickness="0" />
+                                <TextBlock x:Name="WinSxSStatus" FontSize="12.5"
+                                           Foreground="{StaticResource Dim}"
+                                           TextWrapping="Wrap" Margin="0,10,0,0"
+                                           Visibility="Collapsed" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Uso do sistema -->
                         <Border Background="{StaticResource PanelAlt}"
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
