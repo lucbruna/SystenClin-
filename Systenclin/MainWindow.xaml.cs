@@ -1015,6 +1015,28 @@ public partial class MainWindow : Window
         try { _winsxsCts?.Cancel(); } catch { }
     }
 
+    private void Reinforce_Click(object sender, RoutedEventArgs e)
+    {
+        ReinforceButton.IsEnabled = false;
+        ReinforceStatus.Text = "Aplicando…";
+        try
+        {
+            bool deep = ReinforceDeepCheck.IsChecked == true;
+            var r = SecurityReinforce.Apply(deep);
+            ReinforceStatus.Text = r.Success
+                ? $"Concluído: {r.Applied} ajuste(s) aplicado(s), {r.Skipped} ignorado(s)."
+                : $"Falha: {r.Error}";
+        }
+        catch (Exception ex)
+        {
+            ReinforceStatus.Text = $"Falha: {ex.Message}";
+        }
+        finally
+        {
+            ReinforceButton.IsEnabled = true;
+        }
+    }
+
     private static string FormatBoot(BootPerformance? boot) => boot is null
         ? "Indisponível"
         : $"{boot.BootDuration.TotalSeconds:N1} s (às {boot.BootTime:HH:mm})";
