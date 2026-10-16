@@ -126,6 +126,10 @@ public partial class MainWindow : Window
         InitializeComponent();
         ItemsList.ItemsSource = _fileRows;
         SpaceList.ItemsSource = _spaceRows;
+        AppsList.ItemsSource = _appRows;
+        DuplicatesList.ItemsSource = _duplicateGroups;
+        ShortcutsList.ItemsSource = _shortcutRows;
+        LargeFilesList.ItemsSource = _largeRows;
         Loaded += (_, _) => { UpdateFreeSpace(); StartStatusBar(); };
 
         RestorePointCheck.IsChecked = _elevated;
