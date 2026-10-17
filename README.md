@@ -31,7 +31,7 @@ cd Systenclin
 dotnet run -c Release
 ```
 
-Ready-to-run executable: `dist/Systenclin.exe` (≈ 775 KB + `e_sqlite3.dll`),
+Ready-to-run executable: `dist/Systenclin.exe` (≈ 918 KB + `e_sqlite3.dll`),
 single file, requires the .NET Desktop Runtime 10.
 
 Tagged releases (`v*`) are built and published automatically by
