@@ -9,7 +9,16 @@ public sealed record WingetPackage(string Name, string Id, string CurrentVersion
 public sealed record WingetListResult(bool Success, string? Error, IReadOnlyList<WingetPackage> Packages, string? RawOutput);
 
 /// <summary>Resultado de uma ação do winget (atualizar tudo ou um pacote): sucesso, erro em PT e saída.</summary>
-public sealed record WingetActionResult(bool Success, string? Error, string? Output);
+public sealed record WingetActionResult(bool Success, string? Error, string? Output, int ExitCode = 0)
+{
+    /// <summary>
+    /// "Sem atualização aplicável" (0x8A15002B): existe versão nova, mas ela não
+    /// se aplica a este sistema (escopo, arquitetura ou idioma). Não é falha real.
+    /// </summary>
+    public bool NotApplicable =>
+        !Success && (ExitCode == unchecked((int)0x8A15002B)
+            || Output?.Contains("No applicable upgrade", StringComparison.OrdinalIgnoreCase) == true);
+}
 
 /// <summary>
 /// Lista e aplica atualizações de programas instalados usando o winget
@@ -86,7 +95,7 @@ public static class AppUpdater
         // (a UI mostra o estado vazio). Exit code diferente de zero é falha.
         return outcome.ExitCode == 0
             ? new WingetListResult(true, null, packages, raw)
-            : new WingetListResult(false, $"winget retornou código {outcome.ExitCode}.", packages, raw);
+            : new WingetListResult(false, $"winget retornou código 0x{outcome.ExitCode:X8}.", packages, raw);
     }
 
     /// <summary>Atualiza todos os pacotes com atualização disponível. Nunca lança.</summary>
@@ -104,8 +113,10 @@ public static class AppUpdater
         if (id.Contains('"') || id.Any(char.IsControl))
             return new WingetActionResult(false, "Identificador do pacote inválido.", null);
 
+        // --include-unknown alinha com a listagem: pacotes cuja versão instalada
+        // não foi detectada também entram na atualização (mesma flag do UpdateAll).
         var arguments =
-            $"upgrade --id \"{id}\" --exact --accept-package-agreements --accept-source-agreements --disable-interactivity";
+            $"upgrade --id \"{id}\" --exact --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity";
 
         return RunAction(arguments, ct);
     }
@@ -122,9 +133,10 @@ public static class AppUpdater
         if (!outcome.Success)
             return new WingetActionResult(false, outcome.Error, output);
 
+        // Exit codes do winget são HRESULTs: mostrados em hex, como na documentação.
         return outcome.ExitCode == 0
-            ? new WingetActionResult(true, null, output)
-            : new WingetActionResult(false, $"winget retornou código {outcome.ExitCode}.", output);
+            ? new WingetActionResult(true, null, output, 0)
+            : new WingetActionResult(false, $"winget retornou código 0x{outcome.ExitCode:X8}.", output, outcome.ExitCode);
     }
 
     // ── Execução do winget ──────────────────────────────────────────────
@@ -308,4 +320,31 @@ public static class AppUpdater
     /// <summary>Cauda da saída até <see cref="OutputLimit"/>; vazia vira null para a UI.</summary>
     private static string? Tail(string text)
         => string.IsNullOrEmpty(text) ? null : text.Length > OutputLimit ? text[^OutputLimit..] : text;
+
+    /// <summary>
+    /// Primeira linha da saída com cara de erro (en/pt), para resumir na UI sem
+    /// despejar o log inteiro. Null quando não há nada com essa cara.
+    /// </summary>
+    public static string? FirstErrorLine(string? output)
+    {
+        if (string.IsNullOrWhiteSpace(output))
+            return null;
+
+        foreach (var raw in output.Split('\n'))
+        {
+            var line = raw.Trim();
+            if (line.Length == 0)
+                continue;
+
+            if (line.Contains("error", StringComparison.OrdinalIgnoreCase)
+                || line.Contains("erro", StringComparison.OrdinalIgnoreCase)
+                || line.Contains("failed", StringComparison.OrdinalIgnoreCase)
+                || line.Contains("falh", StringComparison.OrdinalIgnoreCase))
+            {
+                return line.Length > 160 ? line[..160] : line;
+            }
+        }
+
+        return null;
+    }
 }

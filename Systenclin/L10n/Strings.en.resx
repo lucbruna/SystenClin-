@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="systenclin" xml:space="preserve">
+    <value>Systenclin</value>
+  </data>
+  <data name="arquivos" xml:space="preserve">
+    <value>Files</value>
+  </data>
+  <data name="privacidade" xml:space="preserve">
+    <value>Privacy</value>
+  </data>
+  <data name="otimizacao" xml:space="preserve">
+    <value>Optimization</value>
+  </data>
+  <data name="duplicados" xml:space="preserve">
+    <value>Duplicates</value>
+  </data>
+  <data name="atalhos" xml:space="preserve">
+    <value>Shortcuts</value>
+  </data>
+  <data name="aplicativos" xml:space="preserve">
+    <value>Apps</value>
+  </data>
+  <data name="arquivos_grandes" xml:space="preserve">
+    <value>Large files</value>
+  </data>
+  <data name="espaco" xml:space="preserve">
+    <value>Space</value>
+  </data>
+  <data name="analisar_agora" xml:space="preserve">
+    <value>Scan now</value>
+  </data>
+  <data name="cancelar" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="item" xml:space="preserve">
+    <value>ITEM</value>
+  </data>
+  <data name="tamanho" xml:space="preserve">
+    <value>SIZE</value>
+  </data>
+  <data name="risco" xml:space="preserve">
+    <value>RISK</value>
+  </data>
+  <data name="aceleracao_em_1_clique" xml:space="preserve">
+    <value>1-click boost</value>
+  </data>
+  <data name="libera_a_memoria_dos_processos_em_uso_e_limpa_o" xml:space="preserve">
+    <value>Frees the memory of running processes and flushes the Windows DNS cache in one go.</value>
+  </data>
+  <data name="acelerar_agora" xml:space="preserve">
+    <value>Boost now</value>
+  </data>
+  <data name="componentes_do_windows_winsxs" xml:space="preserve">
+    <value>Windows components (WinSxS)</value>
+  </data>
+  <data name="remove_versoes_antigas_de_componentes_do_windows" xml:space="preserve">
+    <value>Removes old Windows component versions already superseded by updates. Can free several GB. Requires administrator.</value>
+  </data>
+  <data name="limpeza_profunda_remove_tambem_a_base_de_rollbac" xml:space="preserve">
+    <value>Deep cleanup (also removes the rollback base — irreversible)</value>
+  </data>
+  <data name="limpar_componentes" xml:space="preserve">
+    <value>Clean components</value>
+  </data>
+  <data name="reforco_de_seguranca" xml:space="preserve">
+    <value>Security hardening</value>
+  </data>
+  <data name="desabilita_autorun_compartilhamentos_administrat" xml:space="preserve">
+    <value>Disables autorun, hidden administrative shares, NTLMv1 and cleartext WDigest. Reduces the attack surface.</value>
+  </data>
+  <data name="reforco_profundo_desabilita_remote_registry_e_sm" xml:space="preserve">
+    <value>Deep hardening (disables Remote Registry and SMBv1)</value>
+  </data>
+  <data name="aplicar_reforco" xml:space="preserve">
+    <value>Apply hardening</value>
+  </data>
+  <data name="limpeza_de_drivers_antigos" xml:space="preserve">
+    <value>Old driver cleanup</value>
+  </data>
+  <data name="remove_versoes_antigas_de_drivers_no_driverstore" xml:space="preserve">
+    <value>Removes old driver versions from the DriverStore, keeping the newest of each vendor. Requires administrator.</value>
+  </data>
+  <data name="limpar_drivers_antigos" xml:space="preserve">
+    <value>Clean old drivers</value>
+  </data>
+  <data name="configuracoes_rapidas" xml:space="preserve">
+    <value>Quick settings</value>
+  </data>
+  <data name="ajustes_de_ux_e_desempenho_do_windows" xml:space="preserve">
+    <value>Windows UX and performance tweaks.</value>
+  </data>
+  <data name="mostrar_extensoes_de_arquivo" xml:space="preserve">
+    <value>Show file extensions</value>
+  </data>
+  <data name="mostrar_arquivos_ocultos" xml:space="preserve">
+    <value>Show hidden files</value>
+  </data>
+  <data name="modo_escuro_do_windows" xml:space="preserve">
+    <value>Windows dark mode</value>
+  </data>
+  <data name="desabilitar_animacoes_desempenho" xml:space="preserve">
+    <value>Disable animations (performance)</value>
+  </data>
+  <data name="desabilitar_transparencia" xml:space="preserve">
+    <value>Disable transparency</value>
+  </data>
+  <data name="aplicar" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="auto_ram_clean" xml:space="preserve">
+    <value>Auto RAM Clean</value>
+  </data>
+  <data name="limpa_a_ram_automaticamente_a_cada_intervalo_enq" xml:space="preserve">
+    <value>Cleans RAM automatically at the chosen interval (while the app is open).</value>
+  </data>
+  <data name="habilitar" xml:space="preserve">
+    <value>Enable</value>
+  </data>
+  <data name="intervalo_min" xml:space="preserve">
+    <value>Interval (min):</value>
+  </data>
+  <data name="10" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="limpeza_automatica_agendada" xml:space="preserve">
+    <value>Scheduled automatic clean</value>
+  </data>
+  <data name="cria_uma_tarefa_agendada_do_windows_que_executa" xml:space="preserve">
+    <value>Creates a Windows scheduled task that runs the cleanup in the background.</value>
+  </data>
+  <data name="60" xml:space="preserve">
+    <value>60</value>
+  </data>
+  <data name="agendar" xml:space="preserve">
+    <value>Schedule</value>
+  </data>
+  <data name="cancelar_agendamento" xml:space="preserve">
+    <value>Cancel schedule</value>
+  </data>
+  <data name="limpeza_de_registro_segura" xml:space="preserve">
+    <value>Registry cleanup (safe)</value>
+  </data>
+  <data name="remove_entradas_orfas_de_software_desinstalado_e" xml:space="preserve">
+    <value>Removes orphaned entries from uninstalled software and recent-file traces (MRU). Backs up before removing.</value>
+  </data>
+  <data name="limpar_registro" xml:space="preserve">
+    <value>Clean registry</value>
+  </data>
+  <data name="pasta_segura_safe_folder" xml:space="preserve">
+    <value>Safe folder</value>
+  </data>
+  <data name="cria_uma_pasta_com_acls_restritivas_apenas_o_usu" xml:space="preserve">
+    <value>Creates a folder with restrictive ACLs: only the current user has access. Protects sensitive data from other users/processes.</value>
+  </data>
+  <data name="criar_abrir_pasta_segura" xml:space="preserve">
+    <value>Create / open safe folder</value>
+  </data>
+  <data name="desfragmentacao_do_registro_informativo" xml:space="preserve">
+    <value>Registry defrag (informational)</value>
+  </data>
+  <data name="mede_o_tamanho_do_hive_do_usuario_a_compactacao" xml:space="preserve">
+    <value>Measures the size of the user hive. Real registry compaction requires offline tools and a reboot; use the registry cleanup above to reduce size.</value>
+  </data>
+  <data name="medir_hive" xml:space="preserve">
+    <value>Measure hive</value>
+  </data>
+  <data name="destruicao_segura_de_arquivo" xml:space="preserve">
+    <value>Secure file deletion</value>
+  </data>
+  <data name="sobrescreve_o_arquivo_3_vezes_dod_5220_22_m_ante" xml:space="preserve">
+    <value>Overwrites the file 3 times (DoD 5220.22-M) before deleting, making recovery harder. Pick the file.</value>
+  </data>
+  <data name="escolher_e_destruir" xml:space="preserve">
+    <value>Choose and destroy…</value>
+  </data>
+  <data name="uso_do_sistema" xml:space="preserve">
+    <value>System usage</value>
+  </data>
+  <data name="atualizado_a_cada_segundo_ultimos_60_s" xml:space="preserve">
+    <value>Updated every second (last 60 s).</value>
+  </data>
+  <data name="lixeira" xml:space="preserve">
+    <value>Recycle Bin</value>
+  </data>
+  <data name="verificar" xml:space="preserve">
+    <value>Check</value>
+  </data>
+  <data name="inicializacao" xml:space="preserve">
+    <value>Startup</value>
+  </data>
+  <data name="atualizar" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="programas_que_sobem_com_o_windows_vindos_das_cha" xml:space="preserve">
+    <value>Programs that start with Windows, from the Run keys and Startup folders. Disabling deletes nothing — you can re-enable later.</value>
+  </data>
+  <data name="desativado" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="memoria_ram" xml:space="preserve">
+    <value>Memory (RAM)</value>
+  </data>
+  <data name="esvazia_o_working_set_dos_processos_maiores_o_wi" xml:space="preserve">
+    <value>Empties the working set of larger processes: Windows returns unused pages to physical memory. Programs stay open.</value>
+  </data>
+  <data name="liberar_memoria_agora" xml:space="preserve">
+    <value>Free memory now</value>
+  </data>
+  <data name="sistema_e_rede" xml:space="preserve">
+    <value>System and Network</value>
+  </data>
+  <data name="diagnostico_do_ultimo_boot_e_o_cache_de_nomes_do" xml:space="preserve">
+    <value>Last boot diagnostics and the Windows name cache.</value>
+  </data>
+  <data name="limpar_cache_dns" xml:space="preserve">
+    <value>Flush DNS cache</value>
+  </data>
+  <data name="rede" xml:space="preserve">
+    <value>Network</value>
+  </data>
+  <data name="adaptadores_de_rede_do_windows_renovar_o_enderec" xml:space="preserve">
+    <value>Windows network adapters. Renewing the IP address and flushing the ARP cache require administrator.</value>
+  </data>
+  <data name="renovar_endereco_ip" xml:space="preserve">
+    <value>Renew IP address</value>
+  </data>
+  <data name="limpar_cache_arp" xml:space="preserve">
+    <value>Flush ARP cache</value>
+  </data>
+  <data name="disco_do_sistema" xml:space="preserve">
+    <value>System disk</value>
+  </data>
+  <data name="otimizacao_do_disco_que_contem_o_windows_trim_em" xml:space="preserve">
+    <value>Optimizes the disk that contains Windows: TRIM on SSD, defrag on HDD. May take a few minutes.</value>
+  </data>
+  <data name="otimizar_disco_c" xml:space="preserve">
+    <value>Optimize disk (C:)</value>
+  </data>
+  <data name="saude_do_disco" xml:space="preserve">
+    <value>Disk health</value>
+  </data>
+  <data name="estado_dos_discos_fisicos_smart_e_verificacao_on" xml:space="preserve">
+    <value>Physical disk state (SMART) and online check of the system volume with chkdsk /scan.</value>
+  </data>
+  <data name="verificar_saude" xml:space="preserve">
+    <value>Check health</value>
+  </data>
+  <data name="verificar_volume_chkdsk_scan" xml:space="preserve">
+    <value>Check volume (chkdsk /scan)</value>
+  </data>
+  <data name="processos" xml:space="preserve">
+    <value>Processes</value>
+  </data>
+  <data name="maiores_consumidores_de_memoria_encerre_o_que_na" xml:space="preserve">
+    <value>Top memory consumers. End what you are not using.</value>
+  </data>
+  <data name="escolher_pasta" xml:space="preserve">
+    <value>Choose folder…</value>
+  </data>
+  <data name="procurar_duplicados" xml:space="preserve">
+    <value>Find duplicates</value>
+  </data>
+  <data name="procurar_atalhos_quebrados" xml:space="preserve">
+    <value>Find broken shortcuts</value>
+  </data>
+  <data name="procurar_atualizacoes" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="atualizar_tudo" xml:space="preserve">
+    <value>Update all</value>
+  </data>
+  <data name="desinstalar_programas" xml:space="preserve">
+    <value>Uninstall programs</value>
+  </data>
+  <data name="remove_programas_instalados_neste_pc_via_winget" xml:space="preserve">
+    <value>Removes programs installed on this PC via winget.</value>
+  </data>
+  <data name="carregar_lista" xml:space="preserve">
+    <value>Load list</value>
+  </data>
+  <data name="tamanho_minimo_do_arquivo" xml:space="preserve">
+    <value>Minimum file size</value>
+  </data>
+  <data name="50_mb" xml:space="preserve">
+    <value>50 MB</value>
+  </data>
+  <data name="100_mb" xml:space="preserve">
+    <value>100 MB</value>
+  </data>
+  <data name="500_mb" xml:space="preserve">
+    <value>500 MB</value>
+  </data>
+  <data name="1_gb" xml:space="preserve">
+    <value>1 GB</value>
+  </data>
+  <data name="procurar" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="voltar" xml:space="preserve">
+    <value>↑ Back</value>
+  </data>
+  <data name="analisar" xml:space="preserve">
+    <value>Scan</value>
+  </data>
+  <data name="clique_numa_area_para_entrar_na_pasta" xml:space="preserve">
+    <value>Click an area to enter the folder.</value>
+  </data>
+  <data name="criar_ponto_de_restauracao_antes_de_limpar" xml:space="preserve">
+    <value>Create a restore point before cleaning</value>
+  </data>
+  <data name="analisar_de_novo" xml:space="preserve">
+    <value>Scan again</value>
+  </data>
+  <data name="limpar_selecionados" xml:space="preserve">
+    <value>Clean selected</value>
+  </data>
+  <data name="systenclin_0_8_arquivos_vao_para_a_lixeira_dados" xml:space="preserve">
+    <value>Systenclin 0.8 — files go to the Recycle Bin; browser data has automatic backup.</value>
+  </data>
+  <data name="backups" xml:space="preserve">
+    <value>Backups</value>
+  </data>
+  <data name="historico" xml:space="preserve">
+    <value>History</value>
+  </data>
+</root>

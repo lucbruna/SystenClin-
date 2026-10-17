@@ -1,4 +1,6 @@
 using System.IO;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Systenclin.Core;
 
 // Verificação do núcleo do Systenclin — v0.1 (arquivos) + v0.2 (privacidade).
@@ -733,6 +735,122 @@ finally
     try { if (Directory.Exists(sandbox)) Directory.Delete(sandbox, true); } catch { }
     try { if (Directory.Exists(sandbox + "-prof")) Directory.Delete(sandbox + "-prof", true); } catch { }
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+Section("11. i18n: recursos PT/EN/ES e chaves usadas no XAML/código");
+// ══════════════════════════════════════════════════════════════════════════
+
+static string? FindRepoRoot()
+{
+    var dir = new DirectoryInfo(AppContext.BaseDirectory);
+    while (dir is not null)
+    {
+        if (Directory.Exists(Path.Combine(dir.FullName, "Systenclin")) &&
+            Directory.Exists(Path.Combine(dir.FullName, "Testes")))
+            return dir.FullName;
+        dir = dir.Parent;
+    }
+    return null;
+}
+
+static Dictionary<string, string>? TryReadResx(string path)
+{
+    try
+    {
+        var rows = new Dictionary<string, string>();
+        foreach (var data in XDocument.Load(path).Root!.Elements("data"))
+            rows[data.Attribute("name")!.Value] = (string?)data.Element("value") ?? "";
+        return rows;
+    }
+    catch
+    {
+        return null;
+    }
+}
+
+static bool SkipBuildDir(string path) => path.Contains(@"\obj\") || path.Contains(@"\bin\");
+
+var repoRoot = FindRepoRoot();
+var resxDir = repoRoot is null ? "" : Path.Combine(repoRoot, "Systenclin", "L10n");
+var ptResx = repoRoot is null ? null : TryReadResx(Path.Combine(resxDir, "Strings.resx"));
+var enResx = repoRoot is null ? null : TryReadResx(Path.Combine(resxDir, "Strings.en.resx"));
+var esResx = repoRoot is null ? null : TryReadResx(Path.Combine(resxDir, "Strings.es.resx"));
+
+Check("i18n: PT/EN/ES com as mesmas chaves e sem valores vazios",
+    ptResx is not null && enResx is not null && esResx is not null
+    && ptResx.Count >= 100
+    && ptResx.Keys.ToHashSet().SetEquals(enResx.Keys)
+    && ptResx.Keys.ToHashSet().SetEquals(esResx.Keys)
+    && ptResx.Values.All(v => v.Trim().Length > 0)
+    && enResx.Values.All(v => v.Trim().Length > 0)
+    && esResx.Values.All(v => v.Trim().Length > 0),
+    ptResx is null || enResx is null || esResx is null
+        ? $"resx ausente ou ilegível (raiz: {repoRoot ?? "não encontrada"})"
+        : $"pt={ptResx.Count} en={enResx.Count} es={esResx.Count}");
+
+var usedKeys = new HashSet<string>();
+if (repoRoot is not null)
+{
+    var rxAttr = new Regex("l:Tr\\.(?:Key|TipKey)=\"([^\"]+)\"");
+    var rxCall = new Regex("Loc\\.T\\(\\s*\"([^\"]+)\"");
+
+    foreach (var xaml in Directory.EnumerateFiles(Path.Combine(repoRoot, "Systenclin"), "*.xaml", SearchOption.AllDirectories))
+        if (!SkipBuildDir(xaml))
+            foreach (Match m in rxAttr.Matches(File.ReadAllText(xaml)))
+                usedKeys.Add(m.Groups[1].Value);
+
+    foreach (var cs in Directory.EnumerateFiles(Path.Combine(repoRoot, "Systenclin"), "*.cs", SearchOption.AllDirectories))
+        if (!SkipBuildDir(cs))
+            foreach (Match m in rxCall.Matches(File.ReadAllText(cs)))
+                usedKeys.Add(m.Groups[1].Value);
+}
+
+List<string> missingKeys = ptResx is null
+    ? new List<string> { "<sem resx>" }
+    : usedKeys.Where(k => !ptResx.ContainsKey(k)).OrderBy(k => k).ToList();
+Check("i18n: toda chave usada no XAML/código existe no resx",
+    ptResx is not null && usedKeys.Count > 0 && missingKeys.Count == 0,
+    $"{usedKeys.Count} usadas; faltando: {string.Join(", ", missingKeys.Take(8))}");
+
+List<string> orphanKeys = ptResx is null
+    ? new List<string>()
+    : ptResx.Keys.Where(k => !usedKeys.Contains(k)).OrderBy(k => k).ToList();
+Check("i18n: nenhuma chave órfã no resx",
+    ptResx is not null && orphanKeys.Count == 0,
+    ptResx is null ? "sem resx" : $"{orphanKeys.Count} órfã(s): {string.Join(", ", orphanKeys.Take(8))}");
+
+var csprojText = repoRoot is null ? "" : File.ReadAllText(Path.Combine(repoRoot, "Systenclin", "Systenclin.csproj"));
+var rootNsMatch = Regex.Match(csprojText, "<RootNamespace>([^<]+)</RootNamespace>");
+var rootNs = rootNsMatch.Success ? rootNsMatch.Groups[1].Value : "Systenclin";
+var locText = repoRoot is null ? "" : File.ReadAllText(Path.Combine(repoRoot, "Systenclin", "L10n", "Loc.cs"));
+Check("i18n: nome do recurso embutido bate com o RootNamespace do csproj",
+    rootNs.Length > 0 && locText.Contains($"\"{rootNs}.L10n.Strings\""),
+    $"esperado \"{rootNs}.L10n.Strings\" no Loc.cs");
+
+Console.WriteLine($"        {usedKeys.Count} chave(s) usada(s) · {ptResx?.Count ?? 0} chave(s) por idioma");
+
+// ══════════════════════════════════════════════════════════════════════════
+Section("12. Aplicativos: interpretação de resultados do winget");
+// ══════════════════════════════════════════════════════════════════════════
+
+var naoAplicavel = new WingetActionResult(
+    false, "winget retornou código 0x8A15002B.",
+    "No applicable upgrade found.\nA newer package version is available in a configured source...",
+    unchecked((int)0x8A15002B));
+Check("código 0x8A15002B vira 'não aplicável' (não é falha)", naoAplicavel.NotApplicable);
+
+var falhaReal = new WingetActionResult(
+    false, "winget retornou código 0x800704C7.", "Installer failed with exit code 1603",
+    unchecked((int)0x800704C7));
+Check("falha real não vira 'não aplicável'", !falhaReal.NotApplicable);
+
+Check("sucesso nunca é 'não aplicável'",
+    !new WingetActionResult(true, null, "Successfully installed").NotApplicable);
+
+Check("primeira linha de erro é extraída da saída crua",
+    AppUpdater.FirstErrorLine("info\nInstaller failed with exit code 1603\nfim") == "Installer failed with exit code 1603"
+    && AppUpdater.FirstErrorLine("tudo certo\nsem problemas") is null
+    && AppUpdater.FirstErrorLine(null) is null);
 
 Console.WriteLine("\n" + new string('─', 66));
 Console.WriteLine($"  {passed} passaram · {failed} falharam");

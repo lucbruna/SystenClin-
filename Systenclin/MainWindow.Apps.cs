@@ -112,6 +112,7 @@ public partial class MainWindow : Window
         AppsList.Visibility = Visibility.Collapsed;
         AppsEmptyState.Visibility = Visibility.Collapsed;
         AppsSummary.Text = "";
+        AppsSummary.ToolTip = null;
         AppsStatusText.Text = "Procurando atualizações…";
         SetAppsBusyUi(true);
 
@@ -181,15 +182,38 @@ public partial class MainWindow : Window
         SetAppsBusyUi(true);
 
         string message;
-        bool success = false;
+        bool reload = false;
+        bool notApplicable = false;
+        string? details = null;
 
         try
         {
             var result = await Task.Run(() => AppUpdater.Update(id, ct));
-            success = result.Success;
-            message = result.Success
-                ? $"{row.Name} atualizado."
-                : result.Error ?? $"Não foi possível atualizar {row.Name}.";
+
+            if (result.Success)
+            {
+                reload = true;
+                message = $"{row.Name} atualizado.";
+            }
+            else if (result.NotApplicable)
+            {
+                // winget: há versão nova, mas ela não se aplica (escopo/arquitetura/idioma).
+                reload = true;
+                notApplicable = true;
+                message = $"{row.Name}: a atualização disponível não se aplica a este sistema " +
+                          "(escopo, arquitetura ou idioma diferentes da instalação atual).";
+                details = result.Output;
+            }
+            else
+            {
+                message = result.Error ?? $"Não foi possível atualizar {row.Name}.";
+                var hint = AppUpdater.FirstErrorLine(result.Output);
+                if (hint is not null)
+                    message += $" {hint}";
+                if (result.Output?.Contains("elevation", StringComparison.OrdinalIgnoreCase) == true)
+                    message += " Execute o Systenclin como administrador para atualizar este pacote.";
+                details = result.Output;
+            }
         }
         catch (OperationCanceledException)
         {
@@ -206,15 +230,22 @@ public partial class MainWindow : Window
             _appsCts = null;
         }
 
-        if (success)
+        if (reload)
         {
             // A lista precisa refletir a realidade depois da atualização.
             await LoadAppsAsync(message);
+
+            // Atualizou, mas o winget segue listando: a versão instalada não foi
+            // confirmada (ex.: pacote com versão desconhecida). Melhor dizer isso
+            // do que deixar o usuário achando que nada aconteceu.
+            if (!notApplicable && _appRows.Any(r => r.Id == id))
+                AppsSummary.Text += " O winget ainda lista este aplicativo: a versão instalada não pôde ser confirmada.";
         }
         else
         {
             AppsStatusText.Text = "";
             AppsSummary.Text = message;
+            AppsSummary.ToolTip = details;
             SetAppsBusyUi(false);
         }
     }
@@ -227,27 +258,61 @@ public partial class MainWindow : Window
         _appsCts = new CancellationTokenSource();
         var ct = _appsCts.Token;
 
-        AppsStatusText.Text = "Atualizando tudo…";
         SetAppsBusyUi(true);
 
-        string message;
-        bool success = false;
+        // Atualiza um por um (em vez de "winget upgrade --all") para mostrar o
+        // progresso real de cada pacote e citar por nome os que falharem.
+        var targets = _appRows.ToList();
+        var notApplicable = new List<string>();
+        var failed = new List<string>();
+        var details = new List<string>();
+        int done = 0, updated = 0;
+        bool cancelled = false;
 
         try
         {
-            var result = await Task.Run(() => AppUpdater.UpdateAll(ct));
-            success = result.Success;
-            message = result.Success
-                ? "Atualizações concluídas."
-                : result.Error ?? "Não foi possível atualizar os aplicativos.";
+            foreach (var row in targets)
+            {
+                if (ct.IsCancellationRequested)
+                {
+                    cancelled = true;
+                    break;
+                }
+
+                AppsStatusText.Text = $"Atualizando {done + 1}/{targets.Count} — {row.Name}…";
+
+                var result = await Task.Run(() => AppUpdater.Update(row.Id, ct));
+                done++;
+
+                if (result.Success)
+                {
+                    updated++;
+                }
+                else if (result.NotApplicable)
+                {
+                    notApplicable.Add(row.Name);
+                    details.Add($"{row.Name}: {result.Output ?? "sem saída"}");
+                }
+                else if (ct.IsCancellationRequested)
+                {
+                    cancelled = true;
+                    break;
+                }
+                else
+                {
+                    var hint = AppUpdater.FirstErrorLine(result.Output);
+                    failed.Add(hint is null ? row.Name : $"{row.Name} ({hint})");
+                    details.Add($"{row.Name}: {result.Output ?? "sem saída"}");
+                }
+            }
         }
         catch (OperationCanceledException)
         {
-            message = "Operação cancelada.";
+            cancelled = true;
         }
         catch (Exception ex)
         {
-            message = $"Não foi possível atualizar os aplicativos: {ex.Message}";
+            details.Add($"Erro inesperado: {ex.Message}");
         }
         finally
         {
@@ -256,17 +321,22 @@ public partial class MainWindow : Window
             _appsCts = null;
         }
 
-        if (success)
+        string message;
+        if (cancelled && done == 0)
         {
-            // A lista precisa refletir a realidade depois da atualização.
-            await LoadAppsAsync(message);
+            message = "Operação cancelada.";
         }
         else
         {
-            AppsStatusText.Text = "";
-            AppsSummary.Text = message;
-            SetAppsBusyUi(false);
+            var parts = new List<string> { $"{updated} de {targets.Count} atualizados." };
+            if (notApplicable.Count > 0) parts.Add($"Não aplicáveis: {Summarize(notApplicable)}.");
+            if (failed.Count > 0) parts.Add($"Falhas: {Summarize(failed)}.");
+            if (cancelled) parts.Insert(0, $"Cancelado ({done} de {targets.Count} tentados).");
+            message = string.Join(" ", parts);
         }
+
+        await LoadAppsAsync(message);
+        AppsSummary.ToolTip = details.Count == 0 ? null : string.Join(Environment.NewLine, details);
     }
 
     private void SetAppsBusyUi(bool busy)
@@ -275,8 +345,19 @@ public partial class MainWindow : Window
         AppsCancelButton.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         AppsScanButton.IsEnabled = !busy && _wingetAvailable;
         AppsUpdateAllButton.IsEnabled = !busy && _appRows.Count > 0;
-        AppsList.IsEnabled = !busy;
+
+        // Nada de IsEnabled na lista: o estado desabilitado do ListBox pinta cores
+        // de tema fora da paleta escura (fundo claro, texto ilegível). Bloquear o
+        // clique e esmaecer mantém tudo legível durante a operação.
+        AppsList.IsHitTestVisible = !busy;
+        AppsList.Opacity = busy ? 0.55 : 1.0;
     }
+
+    /// <summary>"a; b; c…" — resumo curto de nomes/motivos para a barra de status.</summary>
+    private static string Summarize(List<string> items)
+        => items.Count <= 3
+            ? string.Join("; ", items)
+            : string.Join("; ", items.Take(3)) + "…";
 
     // ── Desinstalação ───────────────────────────────────────────────────────
 
@@ -353,8 +434,9 @@ public partial class MainWindow : Window
 
     private void SetUninsBusyUi(bool busy)
     {
-        UninsFilterBox.IsEnabled = !busy;
-        UninsList.IsEnabled = !busy;
+        UninsFilterBox.IsHitTestVisible = !busy;
+        UninsList.IsHitTestVisible = !busy;
+        UninsList.Opacity = busy ? 0.55 : 1.0;
         UninsLoadButton.IsEnabled = !busy && _uninsAvailable;
     }
 

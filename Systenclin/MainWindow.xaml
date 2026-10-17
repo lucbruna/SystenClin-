@@ -1,7 +1,8 @@
 <Window x:Class="Systenclin.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Systenclin"
+        xmlns:l="clr-namespace:Systenclin.L10n"
+        Title="Systenclin" l:Tr.Key="systenclin"
         Height="780" Width="1140"
         MinHeight="600" MinWidth="900"
         Background="{StaticResource Bg}"
@@ -50,7 +51,7 @@
                              GroupName="Tabs" IsChecked="True"
                              Checked="Tab_Changed" Tag="files">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Arquivos" FontSize="13.5" />
+                        <TextBlock Text="Arquivos" l:Tr.Key="arquivos" FontSize="13.5" />
                         <Border x:Name="FilesBadge" Background="{StaticResource Accent}"
                                 CornerRadius="9" Padding="7,1" Margin="8,0,0,0"
                                 Visibility="Collapsed" VerticalAlignment="Center">
@@ -63,7 +64,7 @@
                 <RadioButton x:Name="TabPrivacy" Style="{StaticResource TabButton}"
                              GroupName="Tabs" Checked="Tab_Changed" Tag="privacy">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Privacidade" FontSize="13.5" />
+                        <TextBlock Text="Privacidade" l:Tr.Key="privacidade" FontSize="13.5" />
                         <Border x:Name="PrivacyBadge" Background="{StaticResource Accent}"
                                 CornerRadius="9" Padding="7,1" Margin="8,0,0,0"
                                 Visibility="Collapsed" VerticalAlignment="Center">
@@ -76,42 +77,42 @@
                 <RadioButton x:Name="TabOptimize" Style="{StaticResource TabButton}"
                              GroupName="Tabs" Checked="Tab_Changed" Tag="optimize">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Otimização" FontSize="13.5" />
+                        <TextBlock Text="Otimização" l:Tr.Key="otimizacao" FontSize="13.5" />
                     </StackPanel>
                 </RadioButton>
 
                 <RadioButton x:Name="TabDuplicates" Style="{StaticResource TabButton}"
                              GroupName="Tabs" Checked="Tab_Changed" Tag="duplicates">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Duplicados" FontSize="13.5" />
+                        <TextBlock Text="Duplicados" l:Tr.Key="duplicados" FontSize="13.5" />
                     </StackPanel>
                 </RadioButton>
 
                 <RadioButton x:Name="TabShortcuts" Style="{StaticResource TabButton}"
                              GroupName="Tabs" Checked="Tab_Changed" Tag="shortcuts">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Atalhos" FontSize="13.5" />
+                        <TextBlock Text="Atalhos" l:Tr.Key="atalhos" FontSize="13.5" />
                     </StackPanel>
                 </RadioButton>
 
                 <RadioButton x:Name="TabApps" Style="{StaticResource TabButton}"
                              GroupName="Tabs" Checked="Tab_Changed" Tag="apps">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Aplicativos" FontSize="13.5" />
+                        <TextBlock Text="Aplicativos" l:Tr.Key="aplicativos" FontSize="13.5" />
                     </StackPanel>
                 </RadioButton>
 
                 <RadioButton x:Name="TabLargeFiles" Style="{StaticResource TabButton}"
                              GroupName="Tabs" Checked="Tab_Changed" Tag="largefiles">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Arquivos grandes" FontSize="13.5" />
+                        <TextBlock Text="Arquivos grandes" l:Tr.Key="arquivos_grandes" FontSize="13.5" />
                     </StackPanel>
                 </RadioButton>
 
                 <RadioButton x:Name="TabSpace" Style="{StaticResource TabButton}"
                              GroupName="Tabs" Checked="Tab_Changed" Tag="space">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Espaço" FontSize="13.5" />
+                        <TextBlock Text="Espaço" l:Tr.Key="espaco" FontSize="13.5" />
                     </StackPanel>
                 </RadioButton>
             </StackPanel>
@@ -168,7 +169,7 @@
                     <!-- O botão de analisar fica SEMPRE visível: é a única porta
                          de entrada do app. Sem ele no estado vazio, não há como
                          começar. -->
-                    <Button x:Name="ScanButton" Content="Analisar agora"
+                    <Button x:Name="ScanButton" Content="Analisar agora" l:Tr.Key="analisar_agora"
                             Style="{StaticResource PrimaryButton}"
                             HorizontalAlignment="Center"
                             Margin="0,26,0,0"
@@ -184,7 +185,7 @@
                                HorizontalAlignment="Center"
                                Margin="0,10,0,0" Visibility="Collapsed"
                                TextTrimming="CharacterEllipsis" />
-                    <Button x:Name="CancelButton" Content="Cancelar"
+                    <Button x:Name="CancelButton" Content="Cancelar" l:Tr.Key="cancelar"
                             Style="{StaticResource GhostButton}"
                             HorizontalAlignment="Center"
                             Margin="0,16,0,0" Padding="14,7" FontSize="12.5"
@@ -218,13 +219,13 @@
                                       Style="{StaticResource RowCheck}"
                                       Checked="SelectAllCheck_Changed"
                                       Unchecked="SelectAllCheck_Changed" />
-                            <TextBlock Grid.Column="1" Text="ITEM" FontSize="10.5"
+                            <TextBlock Grid.Column="1" Text="ITEM" l:Tr.Key="item" FontSize="10.5"
                                        Foreground="{StaticResource Dim}" FontWeight="SemiBold"
                                        VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="2" Text="TAMANHO" FontSize="10.5"
+                            <TextBlock Grid.Column="2" Text="TAMANHO" l:Tr.Key="tamanho" FontSize="10.5"
                                        Foreground="{StaticResource Dim}" FontWeight="SemiBold"
                                        VerticalAlignment="Center" HorizontalAlignment="Right" />
-                            <TextBlock Grid.Column="3" Text="RISCO" FontSize="10.5"
+                            <TextBlock Grid.Column="3" Text="RISCO" l:Tr.Key="risco" FontSize="10.5"
                                        Foreground="{StaticResource Dim}" FontWeight="SemiBold"
                                        VerticalAlignment="Center" HorizontalAlignment="Right" />
                         </Grid>
@@ -357,14 +358,14 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16">
                             <StackPanel>
-                                <TextBlock Text="Aceleração em 1 clique"
+                                <TextBlock Text="Aceleração em 1 clique" l:Tr.Key="aceleracao_em_1_clique"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
                                 <TextBlock
-                                    Text="Libera a memória dos processos em uso e limpa o cache DNS do Windows de uma vez."
+                                    Text="Libera a memória dos processos em uso e limpa o cache DNS do Windows de uma vez." l:Tr.Key="libera_a_memoria_dos_processos_em_uso_e_limpa_o"
                                     FontSize="12.5" Foreground="{StaticResource Dim}"
                                     TextWrapping="Wrap" Margin="0,6,0,0" />
-                                <Button x:Name="BoostButton" Content="Acelerar agora"
+                                <Button x:Name="BoostButton" Content="Acelerar agora" l:Tr.Key="acelerar_agora"
                                         Style="{StaticResource PrimaryButton}"
                                         HorizontalAlignment="Left" Margin="0,14,0,0"
                                         Click="Boost_Click" />
@@ -380,21 +381,21 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Componentes do Windows (WinSxS)"
+                                <TextBlock Text="Componentes do Windows (WinSxS)" l:Tr.Key="componentes_do_windows_winsxs"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
-                                <TextBlock Text="Remove versões antigas de componentes do Windows já substituídas por atualizações. Pode liberar vários GB. Exige administrador."
+                                <TextBlock Text="Remove versões antigas de componentes do Windows já substituídas por atualizações. Pode liberar vários GB. Exige administrador." l:Tr.Key="remove_versoes_antigas_de_componentes_do_windows"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
-                                <CheckBox x:Name="WinSxSDeepCheck" Content="Limpeza profunda (remove também a base de rollback — irreversível)"
+                                <CheckBox x:Name="WinSxSDeepCheck" Content="Limpeza profunda (remove também a base de rollback — irreversível)" l:Tr.Key="limpeza_profunda_remove_tambem_a_base_de_rollbac"
                                           FontSize="12" Foreground="{StaticResource Dim}"
                                           Margin="0,10,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button x:Name="WinSxSCleanButton" Content="Limpar componentes"
+                                    <Button x:Name="WinSxSCleanButton" Content="Limpar componentes" l:Tr.Key="limpar_componentes"
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="16,8" FontSize="12.5"
                                             Click="WinSxS_Clean_Click" />
-                                    <Button x:Name="WinSxSCancelButton" Content="Cancelar"
+                                    <Button x:Name="WinSxSCancelButton" Content="Cancelar" l:Tr.Key="cancelar"
                                             Style="{StaticResource GhostButton}"
                                             Padding="14,7" FontSize="12.5"
                                             Margin="10,0,0,0"
@@ -418,17 +419,17 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Reforço de segurança"
+                                <TextBlock Text="Reforço de segurança" l:Tr.Key="reforco_de_seguranca"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
-                                <TextBlock Text="Desabilita autorun, compartilhamentos administrativos ocultos, NTLMv1 e WDigest em texto claro. Reduz a superfície de ataque."
+                                <TextBlock Text="Desabilita autorun, compartilhamentos administrativos ocultos, NTLMv1 e WDigest em texto claro. Reduz a superfície de ataque." l:Tr.Key="desabilita_autorun_compartilhamentos_administrat"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
-                                <CheckBox x:Name="ReinforceDeepCheck" Content="Reforço profundo (desabilita Remote Registry e SMBv1)"
+                                <CheckBox x:Name="ReinforceDeepCheck" Content="Reforço profundo (desabilita Remote Registry e SMBv1)" l:Tr.Key="reforco_profundo_desabilita_remote_registry_e_sm"
                                           FontSize="12" Foreground="{StaticResource Dim}"
                                           Margin="0,10,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button x:Name="ReinforceButton" Content="Aplicar reforço"
+                                    <Button x:Name="ReinforceButton" Content="Aplicar reforço" l:Tr.Key="aplicar_reforco"
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="16,8" FontSize="12.5"
                                             Click="Reinforce_Click" />
@@ -445,14 +446,14 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Limpeza de drivers antigos"
+                                <TextBlock Text="Limpeza de drivers antigos" l:Tr.Key="limpeza_de_drivers_antigos"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
-                                <TextBlock Text="Remove versões antigas de drivers no DriverStore, mantendo a mais recente de cada fornecedor. Requer administrador."
+                                <TextBlock Text="Remove versões antigas de drivers no DriverStore, mantendo a mais recente de cada fornecedor. Requer administrador." l:Tr.Key="remove_versoes_antigas_de_drivers_no_driverstore"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button x:Name="DriverCleanButton" Content="Limpar drivers antigos"
+                                    <Button x:Name="DriverCleanButton" Content="Limpar drivers antigos" l:Tr.Key="limpar_drivers_antigos"
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="16,8" FontSize="12.5"
                                             Click="DriverClean_Click" />
@@ -469,24 +470,24 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Configurações rápidas"
+                                <TextBlock Text="Configurações rápidas" l:Tr.Key="configuracoes_rapidas"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
-                                <TextBlock Text="Ajustes de UX e desempenho do Windows."
+                                <TextBlock Text="Ajustes de UX e desempenho do Windows." l:Tr.Key="ajustes_de_ux_e_desempenho_do_windows"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
-                                <CheckBox x:Name="QsShowExtensions" Content="Mostrar extensões de arquivo"
+                                <CheckBox x:Name="QsShowExtensions" Content="Mostrar extensões de arquivo" l:Tr.Key="mostrar_extensoes_de_arquivo"
                                           FontSize="12" Foreground="{StaticResource Dim}" Margin="0,8,0,0" IsChecked="True" />
-                                <CheckBox x:Name="QsShowHidden" Content="Mostrar arquivos ocultos"
+                                <CheckBox x:Name="QsShowHidden" Content="Mostrar arquivos ocultos" l:Tr.Key="mostrar_arquivos_ocultos"
                                           FontSize="12" Foreground="{StaticResource Dim}" Margin="0,4,0,0" />
-                                <CheckBox x:Name="QsDarkMode" Content="Modo escuro do Windows"
+                                <CheckBox x:Name="QsDarkMode" Content="Modo escuro do Windows" l:Tr.Key="modo_escuro_do_windows"
                                           FontSize="12" Foreground="{StaticResource Dim}" Margin="0,4,0,0" />
-                                <CheckBox x:Name="QsDisableAnimations" Content="Desabilitar animações (desempenho)"
+                                <CheckBox x:Name="QsDisableAnimations" Content="Desabilitar animações (desempenho)" l:Tr.Key="desabilitar_animacoes_desempenho"
                                           FontSize="12" Foreground="{StaticResource Dim}" Margin="0,4,0,0" />
-                                <CheckBox x:Name="QsDisableTransparency" Content="Desabilitar transparência"
+                                <CheckBox x:Name="QsDisableTransparency" Content="Desabilitar transparência" l:Tr.Key="desabilitar_transparencia"
                                           FontSize="12" Foreground="{StaticResource Dim}" Margin="0,4,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button x:Name="QuickSettingsButton" Content="Aplicar"
+                                    <Button x:Name="QuickSettingsButton" Content="Aplicar" l:Tr.Key="aplicar"
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="16,8" FontSize="12.5"
                                             Click="QuickSettings_Click" />
@@ -503,21 +504,21 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Auto RAM Clean"
+                                <TextBlock Text="Auto RAM Clean" l:Tr.Key="auto_ram_clean"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
-                                <TextBlock Text="Limpa a RAM automaticamente a cada intervalo (enquanto o app estiver aberto)."
+                                <TextBlock Text="Limpa a RAM automaticamente a cada intervalo (enquanto o app estiver aberto)." l:Tr.Key="limpa_a_ram_automaticamente_a_cada_intervalo_enq"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                    <CheckBox x:Name="AutoRamEnabled" Content="Habilitar"
+                                    <CheckBox x:Name="AutoRamEnabled" Content="Habilitar" l:Tr.Key="habilitar"
                                               FontSize="12" Foreground="{StaticResource Dim}"
                                               VerticalAlignment="Center"
                                               Checked="AutoRam_Toggle" Unchecked="AutoRam_Toggle" />
-                                    <TextBlock Text="Intervalo (min):" FontSize="12"
+                                    <TextBlock Text="Intervalo (min):" l:Tr.Key="intervalo_min" FontSize="12"
                                                Foreground="{StaticResource Dim}"
                                                Margin="16,0,6,0" VerticalAlignment="Center" />
-                                    <TextBox x:Name="AutoRamInterval" Text="10" Width="50"
+                                    <TextBox x:Name="AutoRamInterval" Text="10" l:Tr.Key="10" Width="50"
                                              FontSize="12" Padding="4,2" />
                                 </StackPanel>
                                     <TextBlock x:Name="AutoRamStatus" FontSize="12.5"
@@ -531,25 +532,25 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Limpeza automática (agendada)"
+                                <TextBlock Text="Limpeza automática (agendada)" l:Tr.Key="limpeza_automatica_agendada"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
-                                <TextBlock Text="Cria uma tarefa agendada do Windows que executa a limpeza em segundo plano."
+                                <TextBlock Text="Cria uma tarefa agendada do Windows que executa a limpeza em segundo plano." l:Tr.Key="cria_uma_tarefa_agendada_do_windows_que_executa"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                    <TextBlock Text="Intervalo (min):" FontSize="12"
+                                    <TextBlock Text="Intervalo (min):" l:Tr.Key="intervalo_min" FontSize="12"
                                                Foreground="{StaticResource Dim}"
                                                VerticalAlignment="Center" />
-                                    <TextBox x:Name="AutoCleanInterval" Text="60" Width="60"
+                                    <TextBox x:Name="AutoCleanInterval" Text="60" l:Tr.Key="60" Width="60"
                                              FontSize="12" Padding="4,2" Margin="6,0,0,0" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button x:Name="AutoCleanScheduleButton" Content="Agendar"
+                                    <Button x:Name="AutoCleanScheduleButton" Content="Agendar" l:Tr.Key="agendar"
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="16,8" FontSize="12.5"
                                             Click="AutoCleanSchedule_Click" />
-                                    <Button x:Name="AutoCleanUnscheduleButton" Content="Cancelar agendamento"
+                                    <Button x:Name="AutoCleanUnscheduleButton" Content="Cancelar agendamento" l:Tr.Key="cancelar_agendamento"
                                             Style="{StaticResource GhostButton}"
                                             Padding="14,7" FontSize="12.5"
                                             Margin="10,0,0,0"
@@ -567,14 +568,14 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Limpeza de registro (segura)"
+                                <TextBlock Text="Limpeza de registro (segura)" l:Tr.Key="limpeza_de_registro_segura"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
-                                <TextBlock Text="Remove entradas órfãs de software desinstalado e rastros de arquivos recentes (MRU). Faz backup antes de remover."
+                                <TextBlock Text="Remove entradas órfãs de software desinstalado e rastros de arquivos recentes (MRU). Faz backup antes de remover." l:Tr.Key="remove_entradas_orfas_de_software_desinstalado_e"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button x:Name="RegistryCleanButton" Content="Limpar registro"
+                                    <Button x:Name="RegistryCleanButton" Content="Limpar registro" l:Tr.Key="limpar_registro"
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="16,8" FontSize="12.5"
                                             Click="RegistryClean_Click" />
@@ -591,14 +592,14 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Pasta segura (Safe Folder)"
+                                <TextBlock Text="Pasta segura (Safe Folder)" l:Tr.Key="pasta_segura_safe_folder"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
-                                <TextBlock Text="Cria uma pasta com ACLs restritivas: apenas o usuário atual tem acesso. Protege dados sensíveis contra outros usuários/processos."
+                                <TextBlock Text="Cria uma pasta com ACLs restritivas: apenas o usuário atual tem acesso. Protege dados sensíveis contra outros usuários/processos." l:Tr.Key="cria_uma_pasta_com_acls_restritivas_apenas_o_usu"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button x:Name="SafeFolderButton" Content="Criar / Abrir pasta segura"
+                                    <Button x:Name="SafeFolderButton" Content="Criar / Abrir pasta segura" l:Tr.Key="criar_abrir_pasta_segura"
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="16,8" FontSize="12.5"
                                             Click="SafeFolder_Click" />
@@ -615,14 +616,14 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Desfragmentação do registro (informativo)"
+                                <TextBlock Text="Desfragmentação do registro (informativo)" l:Tr.Key="desfragmentacao_do_registro_informativo"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
-                                <TextBlock Text="Mede o tamanho do hive do usuário. A compactação real do registro requer ferramentas offline e reinicialização; use a limpeza de registro acima para reduzir o tamanho."
+                                <TextBlock Text="Mede o tamanho do hive do usuário. A compactação real do registro requer ferramentas offline e reinicialização; use a limpeza de registro acima para reduzir o tamanho." l:Tr.Key="mede_o_tamanho_do_hive_do_usuario_a_compactacao"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button x:Name="RegDefragButton" Content="Medir hive"
+                                    <Button x:Name="RegDefragButton" Content="Medir hive" l:Tr.Key="medir_hive"
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="16,8" FontSize="12.5"
                                             Click="RegDefrag_Click" />
@@ -639,14 +640,14 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Destruição segura de arquivo"
+                                <TextBlock Text="Destruição segura de arquivo" l:Tr.Key="destruicao_segura_de_arquivo"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
-                                <TextBlock Text="Sobrescreve o arquivo 3 vezes (DoD 5220.22-M) antes de apagar, dificultando a recuperação. Escolha o arquivo."
+                                <TextBlock Text="Sobrescreve o arquivo 3 vezes (DoD 5220.22-M) antes de apagar, dificultando a recuperação. Escolha o arquivo." l:Tr.Key="sobrescreve_o_arquivo_3_vezes_dod_5220_22_m_ante"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button x:Name="SecureDeleteButton" Content="Escolher e destruir…"
+                                    <Button x:Name="SecureDeleteButton" Content="Escolher e destruir…" l:Tr.Key="escolher_e_destruir"
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="16,8" FontSize="12.5"
                                             Click="SecureDelete_Click" />
@@ -663,10 +664,10 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Uso do sistema"
+                                <TextBlock Text="Uso do sistema" l:Tr.Key="uso_do_sistema"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
-                                <TextBlock Text="Atualizado a cada segundo (últimos 60 s)."
+                                <TextBlock Text="Atualizado a cada segundo (últimos 60 s)." l:Tr.Key="atualizado_a_cada_segundo_ultimos_60_s"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
 
@@ -720,7 +721,7 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Lixeira"
+                                <TextBlock Text="Lixeira" l:Tr.Key="lixeira"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
 
@@ -739,7 +740,7 @@
                                                Margin="0,0,12,0" />
 
                                     <Button Grid.Column="1" x:Name="BinRefreshButton"
-                                            Content="Verificar"
+                                            Content="Verificar" l:Tr.Key="verificar"
                                             Style="{StaticResource GhostButton}"
                                             Padding="14,7" FontSize="12.5"
                                             Click="BinRefresh_Click" />
@@ -764,18 +765,18 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Inicialização"
+                                    <TextBlock Grid.Column="0" Text="Inicialização" l:Tr.Key="inicializacao"
                                                FontSize="14.5" FontWeight="SemiBold"
                                                Foreground="{StaticResource Fg}"
                                                VerticalAlignment="Center" />
                                     <Button Grid.Column="1" x:Name="StartupRefreshButton"
-                                            Content="Atualizar"
+                                            Content="Atualizar" l:Tr.Key="atualizar"
                                             Style="{StaticResource GhostButton}"
                                             Padding="12,6" FontSize="12"
                                             Click="StartupRefresh_Click" />
                                 </Grid>
                                 <TextBlock
-                                    Text="Programas que sobem com o Windows, vindos das chaves Run e das pastas Inicializar. Desativar não apaga nada — dá para ativar de volta depois."
+                                    Text="Programas que sobem com o Windows, vindos das chaves Run e das pastas Inicializar. Desativar não apaga nada — dá para ativar de volta depois." l:Tr.Key="programas_que_sobem_com_o_windows_vindos_das_cha"
                                     FontSize="12.5" Foreground="{StaticResource Dim}"
                                     TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <TextBlock x:Name="StartupMessage" FontSize="12"
@@ -843,7 +844,7 @@
                                                                     Padding="8,3" Margin="8,0,0,0"
                                                                     VerticalAlignment="Center"
                                                                     Visibility="{Binding DisabledBadgeVisibility}">
-                                                                <TextBlock Text="Desativado" FontSize="10.5"
+                                                                <TextBlock Text="Desativado" l:Tr.Key="desativado" FontSize="10.5"
                                                                            FontWeight="SemiBold"
                                                                            Foreground="#F0C674" />
                                                             </Border>
@@ -882,14 +883,14 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Memória RAM"
+                                <TextBlock Text="Memória RAM" l:Tr.Key="memoria_ram"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
                                 <TextBlock
-                                    Text="Esvazia o working set dos processos maiores: o Windows devolve à memória física as páginas que não estão em uso. Os programas continuam abertos."
+                                    Text="Esvazia o working set dos processos maiores: o Windows devolve à memória física as páginas que não estão em uso. Os programas continuam abertos." l:Tr.Key="esvazia_o_working_set_dos_processos_maiores_o_wi"
                                     FontSize="12.5" Foreground="{StaticResource Dim}"
                                     TextWrapping="Wrap" Margin="0,6,0,0" />
-                                <Button x:Name="TrimButton" Content="Liberar memória agora"
+                                <Button x:Name="TrimButton" Content="Liberar memória agora" l:Tr.Key="liberar_memoria_agora"
                                         Style="{StaticResource PrimaryButton}"
                                         HorizontalAlignment="Left" Margin="0,14,0,0"
                                         Click="Trim_Click" />
@@ -911,11 +912,11 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Sistema e Rede"
+                                <TextBlock Text="Sistema e Rede" l:Tr.Key="sistema_e_rede"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
                                 <TextBlock
-                                    Text="Diagnóstico do último boot e o cache de nomes do Windows."
+                                    Text="Diagnóstico do último boot e o cache de nomes do Windows." l:Tr.Key="diagnostico_do_ultimo_boot_e_o_cache_de_nomes_do"
                                     FontSize="12.5" Foreground="{StaticResource Dim}"
                                     TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <TextBlock x:Name="BootTimeText"
@@ -926,7 +927,7 @@
                                            Text="Histórico: carregando…"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,4,0,0" />
-                                <Button x:Name="DnsButton" Content="Limpar cache DNS"
+                                <Button x:Name="DnsButton" Content="Limpar cache DNS" l:Tr.Key="limpar_cache_dns"
                                         Style="{StaticResource GhostButton}"
                                         HorizontalAlignment="Left" Margin="0,14,0,0"
                                         Padding="14,7" FontSize="12.5"
@@ -943,11 +944,11 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Rede"
+                                <TextBlock Text="Rede" l:Tr.Key="rede"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
                                 <TextBlock
-                                    Text="Adaptadores de rede do Windows. Renovar o endereço IP e limpar o cache ARP exigem administrador."
+                                    Text="Adaptadores de rede do Windows. Renovar o endereço IP e limpar o cache ARP exigem administrador." l:Tr.Key="adaptadores_de_rede_do_windows_renovar_o_enderec"
                                     FontSize="12.5" Foreground="{StaticResource Dim}"
                                     TextWrapping="Wrap" Margin="0,6,0,0" />
 
@@ -980,16 +981,16 @@
                                 </ItemsControl>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button x:Name="NetRefreshButton" Content="Atualizar"
+                                    <Button x:Name="NetRefreshButton" Content="Atualizar" l:Tr.Key="atualizar"
                                             Style="{StaticResource GhostButton}"
                                             Padding="14,7" FontSize="12.5"
                                             Click="NetRefresh_Click" />
-                                    <Button x:Name="NetRenewButton" Content="Renovar endereço IP"
+                                    <Button x:Name="NetRenewButton" Content="Renovar endereço IP" l:Tr.Key="renovar_endereco_ip"
                                             Style="{StaticResource GhostButton}"
                                             Padding="14,7" FontSize="12.5" Margin="10,0,0,0"
                                             ToolTipService.ShowOnDisabled="True"
                                             Click="NetRenew_Click" />
-                                    <Button x:Name="NetArpButton" Content="Limpar cache ARP"
+                                    <Button x:Name="NetArpButton" Content="Limpar cache ARP" l:Tr.Key="limpar_cache_arp"
                                             Style="{StaticResource GhostButton}"
                                             Padding="14,7" FontSize="12.5" Margin="10,0,0,0"
                                             ToolTipService.ShowOnDisabled="True"
@@ -1008,18 +1009,18 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Disco do sistema"
+                                <TextBlock Text="Disco do sistema" l:Tr.Key="disco_do_sistema"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
                                 <TextBlock
-                                    Text="Otimização do disco que contém o Windows: TRIM em SSD, desfragmentação em HDD. Pode levar alguns minutos."
+                                    Text="Otimização do disco que contém o Windows: TRIM em SSD, desfragmentação em HDD. Pode levar alguns minutos." l:Tr.Key="otimizacao_do_disco_que_contem_o_windows_trim_em"
                                     FontSize="12.5" Foreground="{StaticResource Dim}"
                                     TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <TextBlock x:Name="DiskMediaTypeText"
                                            Text="Tipo de disco: verificando…"
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,12,0,0" />
-                                <Button x:Name="OptimizeDiskButton" Content="Otimizar disco (C:)"
+                                <Button x:Name="OptimizeDiskButton" Content="Otimizar disco (C:)" l:Tr.Key="otimizar_disco_c"
                                         Style="{StaticResource PrimaryButton}"
                                         HorizontalAlignment="Left" Margin="0,14,0,0"
                                         ToolTipService.ShowOnDisabled="True"
@@ -1034,7 +1035,7 @@
                                            Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,10,0,0"
                                            Visibility="Collapsed" />
-                                <Button x:Name="DiskCancelButton" Content="Cancelar"
+                                <Button x:Name="DiskCancelButton" Content="Cancelar" l:Tr.Key="cancelar"
                                         Style="{StaticResource GhostButton}"
                                         HorizontalAlignment="Left" Margin="0,10,0,0"
                                         Padding="14,7" FontSize="12.5"
@@ -1048,11 +1049,11 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Saúde do disco"
+                                <TextBlock Text="Saúde do disco" l:Tr.Key="saude_do_disco"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
                                 <TextBlock
-                                    Text="Estado dos discos físicos (SMART) e verificação online do volume do sistema com chkdsk /scan."
+                                    Text="Estado dos discos físicos (SMART) e verificação online do volume do sistema com chkdsk /scan." l:Tr.Key="estado_dos_discos_fisicos_smart_e_verificacao_on"
                                     FontSize="12.5" Foreground="{StaticResource Dim}"
                                     TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <TextBlock x:Name="DiskHealthText"
@@ -1060,11 +1061,11 @@
                                            FontSize="12.5" Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,12,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button x:Name="DiskHealthRefreshButton" Content="Verificar saúde"
+                                    <Button x:Name="DiskHealthRefreshButton" Content="Verificar saúde" l:Tr.Key="verificar_saude"
                                             Style="{StaticResource GhostButton}"
                                             Padding="14,7" FontSize="12.5"
                                             Click="DiskHealthRefresh_Click" />
-                                    <Button x:Name="DiskScanButton" Content="Verificar volume (chkdsk /scan)"
+                                    <Button x:Name="DiskScanButton" Content="Verificar volume (chkdsk /scan)" l:Tr.Key="verificar_volume_chkdsk_scan"
                                             Style="{StaticResource PrimaryButton}"
                                             Padding="14,7" FontSize="12.5" Margin="10,0,0,0"
                                             ToolTipService.ShowOnDisabled="True"
@@ -1080,7 +1081,7 @@
                                            Foreground="{StaticResource Dim}"
                                            TextWrapping="Wrap" Margin="0,10,0,0"
                                            Visibility="Collapsed" />
-                                <Button x:Name="DiskScanCancelButton" Content="Cancelar"
+                                <Button x:Name="DiskScanCancelButton" Content="Cancelar" l:Tr.Key="cancelar"
                                         Style="{StaticResource GhostButton}"
                                         HorizontalAlignment="Left" Margin="0,10,0,0"
                                         Padding="14,7" FontSize="12.5"
@@ -1094,11 +1095,11 @@
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
                                 CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                             <StackPanel>
-                                <TextBlock Text="Processos"
+                                <TextBlock Text="Processos" l:Tr.Key="processos"
                                            FontSize="14.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource Fg}" />
                                 <TextBlock
-                                    Text="Maiores consumidores de memória. Encerre o que não estiver usando."
+                                    Text="Maiores consumidores de memória. Encerre o que não estiver usando." l:Tr.Key="maiores_consumidores_de_memoria_encerre_o_que_na"
                                     FontSize="12.5" Foreground="{StaticResource Dim}"
                                     TextWrapping="Wrap" Margin="0,6,0,0" />
 
@@ -1113,7 +1114,7 @@
                                                TextTrimming="CharacterEllipsis"
                                                Margin="0,0,12,0" />
                                     <Button Grid.Column="1" x:Name="ProcRefreshButton"
-                                            Content="Atualizar"
+                                            Content="Atualizar" l:Tr.Key="atualizar"
                                             Style="{StaticResource GhostButton}"
                                             Padding="12,6" FontSize="12"
                                             Click="ProcRefresh_Click" />
@@ -1238,14 +1239,14 @@
                                      ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
 
                             <Button Grid.Column="1" x:Name="DuplicatesBrowseButton"
-                                    Content="Escolher pasta…"
+                                    Content="Escolher pasta…" l:Tr.Key="escolher_pasta"
                                     Style="{StaticResource GhostButton}"
                                     Padding="14,7" FontSize="12.5"
                                     Margin="10,0,0,0"
                                     Click="DuplicatesBrowse_Click" />
 
                             <Button Grid.Column="2" x:Name="DuplicatesScanButton"
-                                    Content="Procurar duplicados"
+                                    Content="Procurar duplicados" l:Tr.Key="procurar_duplicados"
                                     Style="{StaticResource PrimaryButton}"
                                     Padding="16,8" FontSize="12.5"
                                     Margin="10,0,0,0"
@@ -1253,7 +1254,7 @@
                                     Click="DuplicatesScan_Click" />
 
                             <Button Grid.Column="3" x:Name="DuplicatesCancelButton"
-                                    Content="Cancelar"
+                                    Content="Cancelar" l:Tr.Key="cancelar"
                                     Style="{StaticResource GhostButton}"
                                     Padding="14,7" FontSize="12.5"
                                     Margin="10,0,0,0"
@@ -1432,7 +1433,7 @@
                                        Margin="0,0,12,0" />
 
                             <Button Grid.Column="1" x:Name="ShortcutsCancelButton"
-                                    Content="Cancelar"
+                                    Content="Cancelar" l:Tr.Key="cancelar"
                                     Style="{StaticResource GhostButton}"
                                     Padding="14,7" FontSize="12.5"
                                     Margin="0,0,10,0"
@@ -1440,7 +1441,7 @@
                                     Click="ShortcutsCancel_Click" />
 
                             <Button Grid.Column="2" x:Name="ShortcutsScanButton"
-                                    Content="Procurar atalhos quebrados"
+                                    Content="Procurar atalhos quebrados" l:Tr.Key="procurar_atalhos_quebrados"
                                     Style="{StaticResource PrimaryButton}"
                                     Padding="16,8" FontSize="12.5"
                                     Click="ShortcutsScan_Click" />
@@ -1602,7 +1603,7 @@
                                        Margin="0,0,12,0" />
 
                             <Button Grid.Column="1" x:Name="AppsCancelButton"
-                                    Content="Cancelar"
+                                    Content="Cancelar" l:Tr.Key="cancelar"
                                     Style="{StaticResource GhostButton}"
                                     Padding="14,7" FontSize="12.5"
                                     Margin="0,0,10,0"
@@ -1610,7 +1611,7 @@
                                     Click="AppsCancel_Click" />
 
                             <Button Grid.Column="2" x:Name="AppsScanButton"
-                                    Content="Procurar atualizações"
+                                    Content="Procurar atualizações" l:Tr.Key="procurar_atualizacoes"
                                     Style="{StaticResource PrimaryButton}"
                                     Padding="16,8" FontSize="12.5"
                                     IsEnabled="False"
@@ -1694,7 +1695,7 @@
                                                            Margin="0,3,0,0" />
                                             </StackPanel>
 
-                                            <Button Grid.Column="1" Content="Atualizar"
+                                            <Button Grid.Column="1" Content="Atualizar" l:Tr.Key="atualizar"
                                                     Tag="{Binding Id}"
                                                     Style="{StaticResource GhostButton}"
                                                     Padding="12,6" FontSize="12"
@@ -1722,7 +1723,7 @@
                                        VerticalAlignment="Center" TextWrapping="Wrap" />
 
                             <Button Grid.Column="1" x:Name="AppsUpdateAllButton"
-                                    Content="Atualizar tudo"
+                                    Content="Atualizar tudo" l:Tr.Key="atualizar_tudo"
                                     Style="{StaticResource PrimaryButton}"
                                     Padding="16,8" FontSize="12.5"
                                     Margin="12,0,0,0"
@@ -1738,10 +1739,10 @@
                         BorderBrush="{StaticResource Line}" BorderThickness="1"
                         CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
                     <StackPanel>
-                        <TextBlock Text="Desinstalar programas"
+                        <TextBlock Text="Desinstalar programas" l:Tr.Key="desinstalar_programas"
                                    FontSize="14.5" FontWeight="SemiBold"
                                    Foreground="{StaticResource Fg}" />
-                        <TextBlock Text="Remove programas instalados neste PC via winget."
+                        <TextBlock Text="Remove programas instalados neste PC via winget." l:Tr.Key="remove_programas_instalados_neste_pc_via_winget"
                                    FontSize="12.5" Foreground="{StaticResource Dim}"
                                    TextWrapping="Wrap" Margin="0,6,0,0" />
 
@@ -1771,7 +1772,7 @@
                                      TextChanged="UninsFilter_TextChanged" />
 
                             <Button Grid.Column="2" x:Name="UninsLoadButton"
-                                    Content="Carregar lista"
+                                    Content="Carregar lista" l:Tr.Key="carregar_lista"
                                     Style="{StaticResource GhostButton}"
                                     Padding="14,7" FontSize="12.5"
                                     Margin="10,0,0,0"
@@ -1888,7 +1889,7 @@
                             </StackPanel>
 
                             <Button Grid.Column="1" x:Name="LargePickButton"
-                                    Content="Escolher pasta…"
+                                    Content="Escolher pasta…" l:Tr.Key="escolher_pasta"
                                     Style="{StaticResource GhostButton}"
                                     Padding="14,7" FontSize="12.5"
                                     VerticalAlignment="Center"
@@ -1907,21 +1908,21 @@
                                       Padding="8,6"
                                       VerticalAlignment="Center"
                                       VerticalContentAlignment="Center"
-                                      ToolTip="Tamanho mínimo do arquivo">
+                                      ToolTip="Tamanho mínimo do arquivo" l:Tr.TipKey="tamanho_minimo_do_arquivo">
                                 <ComboBox.ItemContainerStyle>
                                     <!-- O popup do combo é claro: texto escuro para seguir legível. -->
                                     <Style TargetType="ComboBoxItem">
                                         <Setter Property="Foreground" Value="#0B0F14" />
                                     </Style>
                                 </ComboBox.ItemContainerStyle>
-                                <ComboBoxItem Content="50 MB" />
-                                <ComboBoxItem Content="100 MB" />
-                                <ComboBoxItem Content="500 MB" />
-                                <ComboBoxItem Content="1 GB" />
+                                <ComboBoxItem Content="50 MB" l:Tr.Key="50_mb" />
+                                <ComboBoxItem Content="100 MB" l:Tr.Key="100_mb" />
+                                <ComboBoxItem Content="500 MB" l:Tr.Key="500_mb" />
+                                <ComboBoxItem Content="1 GB" l:Tr.Key="1_gb" />
                             </ComboBox>
 
                             <Button Grid.Column="3" x:Name="LargeScanButton"
-                                    Content="Procurar"
+                                    Content="Procurar" l:Tr.Key="procurar"
                                     Style="{StaticResource PrimaryButton}"
                                     Padding="16,8" FontSize="12.5"
                                     Margin="10,0,0,0"
@@ -1929,7 +1930,7 @@
                                     Click="LargeScan_Click" />
 
                             <Button Grid.Column="4" x:Name="LargeCancelButton"
-                                    Content="Cancelar"
+                                    Content="Cancelar" l:Tr.Key="cancelar"
                                     Style="{StaticResource GhostButton}"
                                     Padding="14,7" FontSize="12.5"
                                     Margin="10,0,0,0"
@@ -2101,14 +2102,14 @@
                             </StackPanel>
 
                             <Button Grid.Column="1" x:Name="SpaceUpButton"
-                                    Content="↑ Voltar"
+                                    Content="↑ Voltar" l:Tr.Key="voltar"
                                     Style="{StaticResource GhostButton}"
                                     Padding="14,7" FontSize="12.5"
                                     VerticalAlignment="Center"
                                     Click="SpaceUp_Click" />
 
                             <Button Grid.Column="2" x:Name="SpacePickButton"
-                                    Content="Escolher pasta…"
+                                    Content="Escolher pasta…" l:Tr.Key="escolher_pasta"
                                     Style="{StaticResource GhostButton}"
                                     Padding="14,7" FontSize="12.5"
                                     Margin="10,0,0,0"
@@ -2116,7 +2117,7 @@
                                     Click="SpacePick_Click" />
 
                             <Button Grid.Column="3" x:Name="SpaceScanButton"
-                                    Content="Analisar"
+                                    Content="Analisar" l:Tr.Key="analisar"
                                     Style="{StaticResource PrimaryButton}"
                                     Padding="16,8" FontSize="12.5"
                                     Margin="10,0,0,0"
@@ -2124,7 +2125,7 @@
                                     Click="SpaceScan_Click" />
 
                             <Button Grid.Column="4" x:Name="SpaceCancelButton"
-                                    Content="Cancelar"
+                                    Content="Cancelar" l:Tr.Key="cancelar"
                                     Style="{StaticResource GhostButton}"
                                     Padding="14,7" FontSize="12.5"
                                     Margin="10,0,0,0"
@@ -2151,7 +2152,7 @@
                         <Canvas x:Name="SpaceTreemap" Grid.Row="0"
                                 Height="200" Margin="18,8,18,8"
                                 Visibility="Collapsed"
-                                ToolTip="Clique numa área para entrar na pasta." />
+                                ToolTip="Clique numa área para entrar na pasta." l:Tr.TipKey="clique_numa_area_para_entrar_na_pasta" />
 
                         <TextBlock x:Name="SpaceEmptyState" Grid.Row="1"
                                    Text="Escolha uma pasta e clique em Analisar."
@@ -2276,15 +2277,15 @@
                     <StackPanel Grid.Column="1" Orientation="Horizontal"
                                 VerticalAlignment="Center">
                         <CheckBox x:Name="RestorePointCheck"
-                                  Content="Criar ponto de restauração antes de limpar"
+                                  Content="Criar ponto de restauração antes de limpar" l:Tr.Key="criar_ponto_de_restauracao_antes_de_limpar"
                                   Foreground="{StaticResource Dim}" FontSize="12"
                                   VerticalAlignment="Center" Margin="0,0,16,0"
                                   Cursor="Hand"
                                   ToolTipService.ShowOnDisabled="True" />
-                        <Button x:Name="RescanButton" Content="Analisar de novo"
+                        <Button x:Name="RescanButton" Content="Analisar de novo" l:Tr.Key="analisar_de_novo"
                                 Style="{StaticResource GhostButton}"
                                 Click="Rescan_Click" Margin="0,0,10,0" />
-                        <Button x:Name="CleanButton" Content="Limpar selecionados"
+                        <Button x:Name="CleanButton" Content="Limpar selecionados" l:Tr.Key="limpar_selecionados"
                                 Style="{StaticResource PrimaryButton}"
                                 Click="Clean_Click" IsEnabled="False" />
                     </StackPanel>
@@ -2304,7 +2305,7 @@
                 <TextBlock Grid.Column="0" x:Name="FooterText"
                            FontSize="11.5" Foreground="{StaticResource Dim}"
                            VerticalAlignment="Center" TextWrapping="Wrap"
-                           Text="Systenclin 0.8 — arquivos vão para a Lixeira; dados de navegador têm backup automático." />
+                           Text="Systenclin 0.8 — arquivos vão para a Lixeira; dados de navegador têm backup automático." l:Tr.Key="systenclin_0_8_arquivos_vao_para_a_lixeira_dados" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal"
                             HorizontalAlignment="Right" VerticalAlignment="Center"
                             Margin="0,0,14,0">
@@ -2319,11 +2320,26 @@
                                VerticalAlignment="Center" />
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <Button x:Name="BackupsButton" Content="Backups"
+                    <RadioButton x:Name="LangPt" Content="PT" GroupName="Lang"
+                                 Tag="pt-BR" Checked="Lang_Checked"
+                                 Style="{StaticResource LangButton}"
+                                 Margin="0,0,2,0" VerticalAlignment="Center"
+                                 ToolTip="Português" />
+                    <RadioButton x:Name="LangEn" Content="EN" GroupName="Lang"
+                                 Tag="en" Checked="Lang_Checked"
+                                 Style="{StaticResource LangButton}"
+                                 Margin="0,0,2,0" VerticalAlignment="Center"
+                                 ToolTip="English" />
+                    <RadioButton x:Name="LangEs" Content="ES" GroupName="Lang"
+                                 Tag="es" Checked="Lang_Checked"
+                                 Style="{StaticResource LangButton}"
+                                 Margin="0,0,12,0" VerticalAlignment="Center"
+                                 ToolTip="Español" />
+                    <Button x:Name="BackupsButton" Content="Backups" l:Tr.Key="backups"
                             Style="{StaticResource GhostButton}"
                             Padding="12,6" FontSize="12"
                             Click="Backups_Click" Margin="0,0,8,0" />
-                    <Button x:Name="HistoryButton" Content="Histórico"
+                    <Button x:Name="HistoryButton" Content="Histórico" l:Tr.Key="historico"
                             Style="{StaticResource GhostButton}"
                             Padding="12,6" FontSize="12"
                             Click="History_Click" />

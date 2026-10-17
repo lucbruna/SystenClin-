@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using Systenclin.Core;
+using Systenclin.L10n;
 
 namespace Systenclin;
 
@@ -30,6 +31,7 @@ public partial class MainWindow : Window
     private CancellationTokenSource? _cts;
     private bool _busy;
     private bool _syncing;
+    private bool _langInit;
 
     // Otimização: carregamento e ações próprias, independentes do fluxo
     // de análise/limpeza (o _busy continua sendo só das abas de arquivos).
@@ -128,6 +130,8 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        _langInit = true;
+        Loc.Init();
         InitializeComponent();
         ItemsList.ItemsSource = _fileRows;
         SpaceList.ItemsSource = _spaceRows;
@@ -135,7 +139,8 @@ public partial class MainWindow : Window
         DuplicatesList.ItemsSource = _duplicateGroups;
         ShortcutsList.ItemsSource = _shortcutRows;
         LargeFilesList.ItemsSource = _largeRows;
-        Loaded += (_, _) => { UpdateFreeSpace(); StartStatusBar(); };
+        Loaded += (_, _) => { UpdateFreeSpace(); StartStatusBar(); ApplyLanguage(); };
+        Loc.Changed += ApplyLanguage;
 
         RestorePointCheck.IsChecked = _elevated;
         if (!_elevated)
@@ -473,6 +478,28 @@ public partial class MainWindow : Window
         if (list.Count > 0)
             MessageBox.Show(this, "Motivos das falhas:\n\n" + string.Join("\n", list),
                 "Itens não removidos", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  Idioma da interface (PT / EN / ES)
+    // ════════════════════════════════════════════════════════════════════════
+
+    /// <summary>Re-aplica os textos traduzidos e sincroniza os botões de idioma.</summary>
+    private void ApplyLanguage()
+    {
+        Tr.Apply(this);
+
+        _langInit = true;
+        LangPt.IsChecked = Loc.Current == "pt-BR";
+        LangEn.IsChecked = Loc.Current == "en";
+        LangEs.IsChecked = Loc.Current == "es";
+        _langInit = false;
+    }
+
+    private void Lang_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_langInit || sender is not RadioButton radio || radio.Tag is not string code) return;
+        Loc.Set(code);
     }
 
 }

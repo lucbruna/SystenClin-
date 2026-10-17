@@ -16,6 +16,7 @@ Windows cleanup and optimization. Built from scratch — **no code, assets, or b
 | **v0.8** | Extras: broken shortcuts, recycle bin, status bar, 1-click boost, conservative network | ✅ done |
 | **v0.9** | Windows tools: WinSxS, traces, secure delete, hardening, drivers, registry clean, scheduling, safe folder | ✅ done |
 | **v0.10** | Disk health: SMART state + `chkdsk /scan` | ✅ done |
+| **v0.11** | Language selection (PT/EN/ES) + application updates reworked | ✅ done |
 
 ## Run
 
@@ -34,7 +35,7 @@ cd Testes/Systenclin.Testes
 dotnet run -c Release
 ```
 
-**107 checks, 0 failures** (105 when elevated). The focus is on what can
+**115 checks, 0 failures** (113 when elevated). The focus is on what can
 dangerously go wrong, not pretty coverage. The harness compiles `Core/*.cs`
 directly — no UI — and uses the desktop framework only for the boot-event
 EventLog.
@@ -218,6 +219,28 @@ so it survives winget's localized headers and column format changes.
 
 ---
 
+## v0.11 — Language selection + application updates reworked
+
+- **Language** — interface in Portuguese (pt-BR), English, or Spanish, via
+  `.resx` resources (`Strings.resx` neutral = pt-BR, `Strings.en.resx`,
+  `Strings.es.resx`), switchable live from the footer and persisted in
+  `%LOCALAPPDATA%\Systenclin\settings.json`. On first run the system language
+  decides: pt → pt-BR, es → es, anything else → en. Runtime-generated messages
+  are still Portuguese; they move to resources in a later increment.
+- **Application updates reworked** — "Update all" now updates one package at a
+  time, shows `i/n — name…` progress, and names every failure instead of a
+  single generic message. `winget upgrade` now passes `--include-unknown` (the
+  same flag the scan already used — packages whose installed version winget
+  cannot detect were listed as updatable but never updated).
+  "No applicable upgrade found" (exit `0x8A15002B`) is reported as *not
+  applicable* (scope/architecture/language mismatch), not a failure, and the
+  first raw error line shows up in a tooltip when something fails.
+- **Fix** — during scan/update/uninstall the list is no longer disabled
+  (`IsHitTestVisible` + dimming instead): WPF's disabled ListBox paints light
+  theme colors that ignored the dark palette (the "white card").
+
+---
+
 ## What this app does NOT do (on purpose)
 
 - **No kernel driver.** ASC installs two minifilters that intercept file and
@@ -246,6 +269,7 @@ Systenclin/
 │   ├── ShellRecycle.cs        send to Recycle Bin (SHFileOperation)
 │   ├── FileDeleter.cs         permanent removal of cache folders
 │   ├── CleanLog.cs            history in JSON
+│   ├── AppSettings.cs         persisted UI settings (language)
 │   ├── — privacy (v0.2)
 │   ├── BrowserProfile.cs      browser profile discovery
 │   ├── PrivacyItem.cs         one privacy item, with preview
@@ -278,6 +302,10 @@ Systenclin/
 │   ├── SafeFolder.cs          ACL-restricted folder
 │   ├── SecureDelete.cs        DoD 5220.22-M shredding (3 passes)
 │   └── SecurityReinforce.cs   conservative hardening tweaks
+├── L10n/
+│   ├── Loc.cs                 resource lookup + language change event
+│   ├── Tr.cs                  XAML markup extension (l:Tr.Key)
+│   └── Strings*.resx          PT (neutral) / EN / ES resources
 ├── MainWindow.xaml            eight-tab interface
 ├── MainWindow.xaml.cs         fields, constructor, shared plumbing
 ├── MainWindow.Apps.cs         updates and uninstall (winget)
@@ -292,7 +320,7 @@ Systenclin/
 ├── MainWindow.Space.cs        space analysis + treemap
 └── app.manifest               asInvoker (no admin by default)
 
-Testes/Systenclin.Testes/      the 107 checks (105 when elevated; compiles Core directly)
+Testes/Systenclin.Testes/      the 115 checks (113 when elevated; compiles Core directly)
 dist/                          published Systenclin.exe
 ```
 
