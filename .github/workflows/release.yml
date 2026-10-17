@@ -31,7 +31,7 @@ jobs:
       - name: Package
         shell: pwsh
         run: |
-          Copy-Item publish/Systenclin.exe publish/e_sqlite3.dll .
+          Copy-Item -Path publish/Systenclin.exe, publish/e_sqlite3.dll -Destination .
           $zip = "Systenclin-${{ github.ref_name }}-win-x64.zip"
           Compress-Archive -Path Systenclin.exe, e_sqlite3.dll -DestinationPath $zip
           (Get-FileHash $zip -Algorithm SHA256).Hash | Out-File "$zip.sha256" -Encoding ascii
