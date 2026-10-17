@@ -114,6 +114,7 @@ public partial class MainWindow : Window
         AppsSummary.Text = "";
         AppsSummary.ToolTip = null;
         AppsStatusText.Text = "Procurando atualizações…";
+        AppsProgress.IsIndeterminate = true;
         SetAppsBusyUi(true);
 
         try
@@ -178,7 +179,10 @@ public partial class MainWindow : Window
         _appsCts = new CancellationTokenSource();
         var ct = _appsCts.Token;
 
-        AppsStatusText.Text = $"Atualizando {row.Name}…";
+        // Um pacote só não tem total conhecido: a barra segue indeterminada,
+        // mas a fase + o tempo decorrido mostram que o winget está trabalhando.
+        AppsProgress.IsIndeterminate = true;
+        SetAppsPhase($"Atualizando {row.Name}");
         SetAppsBusyUi(true);
 
         string message;
@@ -188,7 +192,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var result = await Task.Run(() => AppUpdater.Update(id, ct));
+            var result = await Task.Run(() => AppUpdater.Update(id, ct, LinePhaseCallback()));
 
             if (result.Success)
             {
@@ -232,6 +236,8 @@ public partial class MainWindow : Window
 
         if (reload)
         {
+            SetAppsPhase(null);
+
             // A lista precisa refletir a realidade depois da atualização.
             await LoadAppsAsync(message);
 
@@ -243,6 +249,7 @@ public partial class MainWindow : Window
         }
         else
         {
+            SetAppsPhase(null);
             AppsStatusText.Text = "";
             AppsSummary.Text = message;
             AppsSummary.ToolTip = details;
@@ -263,6 +270,12 @@ public partial class MainWindow : Window
         // Atualiza um por um (em vez de "winget upgrade --all") para mostrar o
         // progresso real de cada pacote e citar por nome os que falharem.
         var targets = _appRows.ToList();
+
+        // O total é conhecido: a barra vira determinada (progresso real).
+        AppsProgress.IsIndeterminate = false;
+        AppsProgress.Maximum = targets.Count;
+        AppsProgress.Value = 0;
+
         var notApplicable = new List<string>();
         var failed = new List<string>();
         var details = new List<string>();
@@ -279,10 +292,11 @@ public partial class MainWindow : Window
                     break;
                 }
 
-                AppsStatusText.Text = $"Atualizando {done + 1}/{targets.Count} — {row.Name}…";
+                SetAppsPhase($"Atualizando {done + 1}/{targets.Count} — {row.Name}");
 
-                var result = await Task.Run(() => AppUpdater.Update(row.Id, ct));
+                var result = await Task.Run(() => AppUpdater.Update(row.Id, ct, LinePhaseCallback()));
                 done++;
+                AppsProgress.Value = done;
 
                 if (result.Success)
                 {
@@ -335,6 +349,7 @@ public partial class MainWindow : Window
             message = string.Join(" ", parts);
         }
 
+        SetAppsPhase(null);
         await LoadAppsAsync(message);
         AppsSummary.ToolTip = details.Count == 0 ? null : string.Join(Environment.NewLine, details);
     }
@@ -351,6 +366,78 @@ public partial class MainWindow : Window
         // clique e esmaecer mantém tudo legível durante a operação.
         AppsList.IsHitTestVisible = !busy;
         AppsList.Opacity = busy ? 0.55 : 1.0;
+    }
+
+    // ── Fase ao vivo durante a atualização ──────────────────────────────
+    // O winget não emite percentual quando a saída é redirecionada (a barra
+    // animada é só do console). O que ele emite são marcos ("Baixando…",
+    // "Iniciando a instalação…"): mostramos a fase + tempo decorrido, que
+    // prova que o trabalho continua mesmo nos silêncios longos.
+
+    /// <summary>
+    /// Callback de linha do winget: mapeia marcos de fase e aplica na thread da
+    /// janela; callback atrasado de um pacote já concluído é ignorado (versão).
+    /// </summary>
+    private Action<string> LinePhaseCallback() => line =>
+    {
+        var phase = AppUpdater.PhaseFromLine(line);
+        if (phase is null) return;
+
+        var version = _appsPhaseVersion;
+        Dispatcher.BeginInvoke(new Action(() => ApplyAppsPhase(version, phase)));
+    };
+
+    /// <summary>Inicia (base não nulo) ou encerra (base nulo) a linha de fase do update.</summary>
+    private void SetAppsPhase(string? baseText)
+    {
+        _appsPhaseVersion++; // invalida callbacks pendentes do pacote anterior
+
+        if (baseText is null)
+        {
+            _appsPhaseBase = null;
+            _appsPhaseLabel = null;
+            _appsTicker?.Stop();
+            return;
+        }
+
+        if (_appsPhaseBase != baseText)
+        {
+            _appsPhaseBase = baseText;
+            _appsPhaseLabel = null;
+            _appsPhaseStart = DateTime.UtcNow;
+        }
+
+        if (_appsTicker is null)
+        {
+            _appsTicker = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _appsTicker.Tick += (_, _) => RenderAppsPhase();
+        }
+
+        _appsTicker.Start();
+        RenderAppsPhase();
+    }
+
+    /// <summary>Aplica um novo rótulo de fase se ele ainda for do pacote em andamento.</summary>
+    private void ApplyAppsPhase(int version, string label)
+    {
+        if (version != _appsPhaseVersion || _appsPhaseBase is null)
+            return;
+
+        _appsPhaseLabel = label;
+        RenderAppsPhase();
+    }
+
+    private void RenderAppsPhase()
+    {
+        if (_appsPhaseBase is null)
+            return;
+
+        var elapsed = DateTime.UtcNow - _appsPhaseStart;
+        var time = $"{(int)elapsed.TotalMinutes}:{elapsed.Seconds:00}";
+
+        AppsStatusText.Text = _appsPhaseLabel is null
+            ? $"{_appsPhaseBase} · {time}"
+            : $"{_appsPhaseBase} · {_appsPhaseLabel} · {time}";
     }
 
     /// <summary>"a; b; c…" — resumo curto de nomes/motivos para a barra de status.</summary>

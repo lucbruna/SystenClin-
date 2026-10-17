@@ -98,6 +98,14 @@ public partial class MainWindow : Window
     private bool _appsLoading;
     private bool _wingetAvailable;
 
+    // Fase ao vivo da atualização: base ("Atualizando 2/5 — X") + rótulo
+    // ("baixando…") + tempo decorrido, para a UI nunca parecer travada.
+    private string? _appsPhaseBase;
+    private string? _appsPhaseLabel;
+    private DateTime _appsPhaseStart;
+    private int _appsPhaseVersion;
+    private DispatcherTimer? _appsTicker;
+
     // Desinstalação (aba Aplicativos): lista própria via winget, independente
     // do _busy e com confirmação em dois cliques, como o card de Processos.
     private List<InstalledApp> _uninsAll = [];

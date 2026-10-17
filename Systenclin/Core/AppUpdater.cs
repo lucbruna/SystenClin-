@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 
 namespace Systenclin.Core;
 
@@ -66,12 +67,12 @@ public static class AppUpdater
     /// Lista os pacotes com atualização disponível (winget upgrade).
     /// Nunca lança; falha vira <see cref="WingetListResult"/> com Error em PT.
     /// </summary>
-    public static WingetListResult ListUpgrades(CancellationToken ct = default)
+    public static WingetListResult ListUpgrades(CancellationToken ct = default, Action<string>? onLine = null)
     {
         if (ct.IsCancellationRequested)
             return new WingetListResult(false, "Operação cancelada.", Array.Empty<WingetPackage>(), null);
 
-        var outcome = Run(ListArguments, ct);
+        var outcome = Run(ListArguments, ct, onLine);
         var raw = Tail(Compose(outcome.StdOut, outcome.StdErr));
 
         if (!outcome.Success)
@@ -103,7 +104,7 @@ public static class AppUpdater
         => RunAction(UpdateAllArguments, ct);
 
     /// <summary>Atualiza um pacote pelo Id exato. Nunca lança.</summary>
-    public static WingetActionResult Update(string id, CancellationToken ct = default)
+    public static WingetActionResult Update(string id, CancellationToken ct = default, Action<string>? onLine = null)
     {
         if (string.IsNullOrWhiteSpace(id))
             return new WingetActionResult(false, "Identificador do pacote não informado.", null);
@@ -118,16 +119,16 @@ public static class AppUpdater
         var arguments =
             $"upgrade --id \"{id}\" --exact --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity";
 
-        return RunAction(arguments, ct);
+        return RunAction(arguments, ct, onLine);
     }
 
     /// <summary>Executa uma ação do winget e converte exit code/saída em resultado.</summary>
-    private static WingetActionResult RunAction(string arguments, CancellationToken ct)
+    private static WingetActionResult RunAction(string arguments, CancellationToken ct, Action<string>? onLine = null)
     {
         if (ct.IsCancellationRequested)
             return new WingetActionResult(false, "Operação cancelada.", null);
 
-        var outcome = Run(arguments, ct);
+        var outcome = Run(arguments, ct, onLine);
         var output = Tail(Compose(outcome.StdOut, outcome.StdErr));
 
         if (!outcome.Success)
@@ -142,11 +143,12 @@ public static class AppUpdater
     // ── Execução do winget ──────────────────────────────────────────────
 
     /// <summary>
-    /// Executa o winget sem shell e devolve a saída crua. Lê stdout+stderr
-    /// antes do WaitForExit (pipe cheio travaria o filho); cancelamento mata
-    /// a árvore de processos. Nunca lança: falha vira Error em PT.
+    /// Executa o winget sem shell e devolve a saída crua. Lê por linha (eventos
+    /// assíncronos) em vez de ReadToEnd: além de evitar pipe cheio, cada linha
+    /// alimenta o callback de fase da UI. Cancelamento mata a árvore de
+    /// processos. Nunca lança: falha vira Error em PT.
     /// </summary>
-    private static RunOutcome Run(string arguments, CancellationToken ct)
+    private static RunOutcome Run(string arguments, CancellationToken ct, Action<string>? onLine = null)
     {
         try
         {
@@ -163,7 +165,34 @@ public static class AppUpdater
 
             using var proc = new Process { StartInfo = info };
 
+            // stdout e stderr chegam em threads diferentes: cada um tem o
+            // próprio lock (StringBuilder não é thread-safe).
+            var stdout = new StringBuilder();
+            var stderr = new StringBuilder();
+
+            proc.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data is null) return;
+
+                lock (stdout) stdout.AppendLine(e.Data);
+
+                if (onLine is not null)
+                {
+                    // O callback nunca derruba a leitura: exceção vira nada.
+                    try { onLine(e.Data); } catch { }
+                }
+            };
+
+            proc.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data is null) return;
+
+                lock (stderr) stderr.AppendLine(e.Data);
+            };
+
             proc.Start();
+            proc.BeginOutputReadLine();
+            proc.BeginErrorReadLine();
 
             // Cancelar derruba a ÁRVORE do winget: um instalador em andamento
             // não pode continuar depois que o chamador desistiu.
@@ -172,15 +201,18 @@ public static class AppUpdater
                 try { proc.Kill(entireProcessTree: true); } catch { }
             });
 
-            var stdout = proc.StandardOutput.ReadToEnd();
-            var stderr = proc.StandardError.ReadToEnd();
-
+            // Sem timeout: espera o processo E o fim das leituras assíncronas
+            // (o overload sem parâmetro garante os eventos pendentes).
             proc.WaitForExit();
 
-            if (ct.IsCancellationRequested)
-                return new RunOutcome(false, -1, stdout, stderr, "Operação cancelada.");
+            string outText, errText;
+            lock (stdout) outText = stdout.ToString();
+            lock (stderr) errText = stderr.ToString();
 
-            return new RunOutcome(true, proc.ExitCode, stdout, stderr, null);
+            if (ct.IsCancellationRequested)
+                return new RunOutcome(false, -1, outText, errText, "Operação cancelada.");
+
+            return new RunOutcome(true, proc.ExitCode, outText, errText, null);
         }
         catch (Exception ex)
         {
@@ -346,5 +378,46 @@ public static class AppUpdater
         }
 
         return null;
+    }
+
+    // ── Fases ao vivo ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Fase da atualização a partir de uma linha da saída do winget
+    /// ("Baixando…", "Iniciando a instalação…"). Com a saída redirecionada o
+    /// winget NÃO emite percentual (a barra animada é só do console) — estes
+    /// marcos são o que existe. Null quando a linha não é marco de fase.
+    /// </summary>
+    public static string? PhaseFromLine(string? line)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+            return null;
+
+        // "Downloading installer failed" é erro, não progresso.
+        if (!ContainsAny(line, "fail", "falh", "error", "erro")
+            && ContainsAny(line, "Baixando", "Downloading", "Descargando"))
+            return "baixando";
+
+        if (ContainsAny(line, "Hash do instalador verificado", "Successfully verified installer hash", "hash del instalador se verificó"))
+            return "verificando";
+
+        if (ContainsAny(line, "Iniciando a instalação do pacote", "Starting package install", "Iniciando instalación de paquete"))
+            return "instalando";
+
+        if (ContainsAny(line, "Instalado com êxito", "Successfully installed", "Instalado correctamente"))
+            return "concluído";
+
+        return null;
+    }
+
+    private static bool ContainsAny(string line, params string[] needles)
+    {
+        foreach (var needle in needles)
+        {
+            if (line.Contains(needle, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 }

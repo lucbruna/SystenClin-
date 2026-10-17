@@ -852,6 +852,57 @@ Check("primeira linha de erro é extraída da saída crua",
     && AppUpdater.FirstErrorLine("tudo certo\nsem problemas") is null
     && AppUpdater.FirstErrorLine(null) is null);
 
+// ══════════════════════════════════════════════════════════════════════════
+Section("13. Aplicativos: fases ao vivo do winget");
+// ══════════════════════════════════════════════════════════════════════════
+
+Check("download (pt/en/es) vira fase 'baixando'",
+    AppUpdater.PhaseFromLine("Baixando https://www.7-zip.org/a/7z2604-x64.msi") == "baixando"
+    && AppUpdater.PhaseFromLine("Downloading https://example.com/app.msi") == "baixando"
+    && AppUpdater.PhaseFromLine("Descargando https://example.com/app.msi") == "baixando");
+
+Check("linha de erro com 'Downloading' não vira fase",
+    AppUpdater.PhaseFromLine("Downloading installer failed") is null);
+
+Check("hash verificado (pt/en/es) vira fase 'verificando'",
+    AppUpdater.PhaseFromLine("Hash do instalador verificado com êxito") == "verificando"
+    && AppUpdater.PhaseFromLine("Successfully verified installer hash") == "verificando"
+    && AppUpdater.PhaseFromLine("El hash del instalador se verificó correctamente") == "verificando");
+
+Check("início da instalação (pt/en/es) vira fase 'instalando'",
+    AppUpdater.PhaseFromLine("Iniciando a instalação do pacote...") == "instalando"
+    && AppUpdater.PhaseFromLine("Starting package install...") == "instalando"
+    && AppUpdater.PhaseFromLine("Iniciando instalación de paquete...") == "instalando");
+
+Check("sucesso (pt/en/es) vira fase 'concluído'",
+    AppUpdater.PhaseFromLine("Instalado com êxito") == "concluído"
+    && AppUpdater.PhaseFromLine("Successfully installed") == "concluído"
+    && AppUpdater.PhaseFromLine("Instalado correctamente") == "concluído");
+
+Check("linha comum ou vazia não vira fase",
+    AppUpdater.PhaseFromLine("Encontrado 7-Zip [7zip.7zip] Versão 26.04") is null
+    && AppUpdater.PhaseFromLine("Instalador baixado: C:\\Temp\\x.msi") is null
+    && AppUpdater.PhaseFromLine(null) is null
+    && AppUpdater.PhaseFromLine("") is null);
+
+// Smoke opcional contra o winget real (fora do CI): valida a leitura por
+// eventos no processo de verdade. Ative com SYSTENCLIN_WINGET_SMOKE=1.
+if (Environment.GetEnvironmentVariable("SYSTENCLIN_WINGET_SMOKE") == "1")
+{
+    // ══════════════════════════════════════════════════════════════════════
+    Section("14. [smoke] winget real (SYSTENCLIN_WINGET_SMOKE=1)");
+    // ══════════════════════════════════════════════════════════════════════
+
+    var streamedLines = 0;
+    var smoke = AppUpdater.ListUpgrades(default, _ => Interlocked.Increment(ref streamedLines));
+    Check("ListUpgrades rodou e devolveu saída real", smoke.RawOutput is not null);
+    Check("streaming de linhas entregou ao callback", streamedLines > 0);
+}
+else
+{
+    Console.WriteLine("\n14. [smoke] winget real — pulado (SYSTENCLIN_WINGET_SMOKE=1 para rodar)");
+}
+
 Console.WriteLine("\n" + new string('─', 66));
 Console.WriteLine($"  {passed} passaram · {failed} falharam");
 Console.WriteLine(new string('─', 66));

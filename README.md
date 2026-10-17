@@ -17,6 +17,7 @@ Windows cleanup and optimization. Built from scratch — **no code, assets, or b
 | **v0.9** | Windows tools: WinSxS, traces, secure delete, hardening, drivers, registry clean, scheduling, safe folder | ✅ done |
 | **v0.10** | Disk health: SMART state + `chkdsk /scan` | ✅ done |
 | **v0.11** | Language selection (PT/EN/ES) + application updates reworked | ✅ done |
+| **v0.12** | Update progress you can actually see (bar + phases + elapsed) | ✅ done |
 
 ## Run
 
@@ -35,7 +36,7 @@ cd Testes/Systenclin.Testes
 dotnet run -c Release
 ```
 
-**115 checks, 0 failures** (113 when elevated). The focus is on what can
+**121 checks, 0 failures** (119 when elevated). The focus is on what can
 dangerously go wrong, not pretty coverage. The harness compiles `Core/*.cs`
 directly — no UI — and uses the desktop framework only for the boot-event
 EventLog.
@@ -241,6 +242,28 @@ so it survives winget's localized headers and column format changes.
 
 ---
 
+## v0.12 — Update progress you can actually see
+
+- **Determinate bar during "Update all"** — the total is known, so the bar
+  fills per package (`i/n`) instead of sliding indefinitely.
+- **Live phase** — with redirected output winget does *not* print download
+  percentages (the animated bar is console-only; verified empirically), but it
+  does print phase milestones. The status line now shows them as they arrive:
+  `Atualizando 2/5 — 7-Zip · baixando · 0:12` → `… · verificando · 0:31` →
+  `… · instalando · 0:33`. Output is streamed per line via async process
+  events (no pipe deadlocks).
+- **Elapsed time** — ticks every second during the operation, so a long
+  download never looks stuck. Single-package updates keep the indeterminate
+  bar (there is no known total) but get the same phase + time line.
+- Real download percentages would need winget's COM API
+  (`Microsoft.WindowsPackageManager.ComInterop`) — possible, but a much larger
+  change; left out on purpose for now.
+- Tests: section 13 (phase mapping pt/en/es, with error-line rejection);
+  section 14 is an opt-in smoke (`SYSTENCLIN_WINGET_SMOKE=1`) that runs the
+  real winget through the streaming path — skipped in CI.
+
+---
+
 ## What this app does NOT do (on purpose)
 
 - **No kernel driver.** ASC installs two minifilters that intercept file and
@@ -320,7 +343,7 @@ Systenclin/
 ├── MainWindow.Space.cs        space analysis + treemap
 └── app.manifest               asInvoker (no admin by default)
 
-Testes/Systenclin.Testes/      the 115 checks (113 when elevated; compiles Core directly)
+Testes/Systenclin.Testes/      the 121 checks (119 when elevated; compiles Core directly)
 dist/                          published Systenclin.exe
 ```
 
