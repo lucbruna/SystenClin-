@@ -366,4 +366,16 @@
   <data name="instala_os_programas_de_um_arquivo_de_backup" xml:space="preserve">
     <value>Instala os programas de um arquivo de backup.</value>
   </data>
+  <data name="wf_analisar" xml:space="preserve">
+    <value>ANALISAR</value>
+  </data>
+  <data name="wf_revisar" xml:space="preserve">
+    <value>REVISAR</value>
+  </data>
+  <data name="wf_limpar" xml:space="preserve">
+    <value>LIMPAR</value>
+  </data>
+  <data name="wf_recuperar" xml:space="preserve">
+    <value>RECUPERAR</value>
+  </data>
 </root>

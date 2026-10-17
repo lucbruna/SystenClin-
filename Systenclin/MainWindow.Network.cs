@@ -137,6 +137,8 @@ public partial class MainWindow : Window
         _monitorMemHistory.Clear();
         MonitorCpuLine.Points.Clear();
         MonitorMemLine.Points.Clear();
+        MonitorCpuArea.Points.Clear();
+        MonitorMemArea.Points.Clear();
     }
 
     /// <summary>
@@ -186,8 +188,8 @@ public partial class MainWindow : Window
         MonitorCpuBar.Value = Math.Clamp(sample.CpuPercent, 0, 100);
         MonitorMemBar.Value = Math.Clamp(sample.MemoryPercent, 0, 100);
 
-        RenderMonitorChart(MonitorCpuChart, MonitorCpuLine, _monitorCpuHistory);
-        RenderMonitorChart(MonitorMemChart, MonitorMemLine, _monitorMemHistory);
+        RenderMonitorChart(MonitorCpuChart, MonitorCpuLine, MonitorCpuArea, _monitorCpuHistory);
+        RenderMonitorChart(MonitorMemChart, MonitorMemLine, MonitorMemArea, _monitorMemHistory);
     }
 
     /// <summary>Enfileira um valor mantendo no máximo <see cref="MonitorHistoryLimit"/> amostras.</summary>
@@ -201,23 +203,28 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Desenha o histórico como uma linha no gráfico: x distribui as amostras
-    /// pela largura e y mapeia 0..100% para baixo..cima. Menos de duas amostras
-    /// ou gráfico sem largura deixam a linha vazia.
+    /// pela largura e y mapeia 0..100% para baixo..cima. O polígono recebe a
+    /// mesma linha fechada no fundo, formando a área preenchida (sparkline).
+    /// Menos de duas amostras ou gráfico sem largura deixam ambos vazios.
     /// </summary>
     private static void RenderMonitorChart(
-        Grid chart, System.Windows.Shapes.Polyline line, Queue<double> history)
+        Grid chart, System.Windows.Shapes.Polyline line,
+        System.Windows.Shapes.Polygon area, Queue<double> history)
     {
         var points = line.Points;
+        var areaPoints = area.Points;
         var width = chart.ActualWidth;
         var height = double.IsNaN(chart.Height) ? chart.ActualHeight : chart.Height;
 
         if (history.Count < 2 || width <= 0 || height <= 0)
         {
             points.Clear();
+            areaPoints.Clear();
             return;
         }
 
         points.Clear();
+        areaPoints.Clear();
 
         var values = history.ToArray();
         var step = width / (values.Length - 1);
@@ -228,6 +235,13 @@ public partial class MainWindow : Window
             var y = (1 - Math.Clamp(values[i], 0, 100) / 100) * (height - 2) + 1;
             points.Add(new Point(x, y));
         }
+
+        // Área preenchida: a linha + o fecho no fundo do gráfico.
+        foreach (var point in points)
+            areaPoints.Add(point);
+
+        areaPoints.Add(new Point(width, height));
+        areaPoints.Add(new Point(0, height));
     }
 
 }

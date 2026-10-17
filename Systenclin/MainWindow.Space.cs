@@ -252,8 +252,10 @@ public partial class MainWindow : Window
         // Layout slice-and-dice.
         var rects = SliceAndDice(nodes, 0, 0, w, h);
 
-        // Paleta de cores: do accent para tons mais escuros.
-        var baseColor = (Color)ColorConverter.ConvertFromString("#3B82F6");
+        // Paleta de cores: do accent do tema para tons mais escuros.
+        var baseColor = Application.Current?.TryFindResource("AccentColor") is Color accent
+            ? accent
+            : Color.FromRgb(0x2E, 0x7B, 0xFF);
         int idx = 0;
         int totalNodes = rects.Count;
         foreach (var (node, rect) in rects)

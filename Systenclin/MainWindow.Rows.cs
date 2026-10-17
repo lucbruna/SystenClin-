@@ -483,15 +483,19 @@ public partial class MainWindow : Window
 
         // Pincéis congelados e compartilhados: antes era uma alocação nova
         // a cada leitura de propriedade, uma por linha realizada na tela.
-        private static readonly SolidColorBrush LowRiskBackground = Frozen(0x1B, 0x3A, 0x24);
-        private static readonly SolidColorBrush MediumRiskBackground = Frozen(0x3A, 0x30, 0x12);
-        private static readonly SolidColorBrush HighRiskBackground = Frozen(0x3A, 0x1B, 0x1A);
-        private static readonly SolidColorBrush LowRiskForeground = Frozen(0x7E, 0xE0, 0x8F);
-        private static readonly SolidColorBrush MediumRiskForeground = Frozen(0xF0, 0xC6, 0x74);
-        private static readonly SolidColorBrush HighRiskForeground = Frozen(0xFF, 0x9A, 0x94);
+        private static readonly Brush LowRiskBackground = Themed("RiskLowBg", 0x14, 0x32, 0x1F);
+        private static readonly Brush MediumRiskBackground = Themed("RiskMedBg", 0x33, 0x2A, 0x12);
+        private static readonly Brush HighRiskBackground = Themed("RiskHighBg", 0x33, 0x16, 0x1A);
+        private static readonly Brush LowRiskForeground = Themed("RiskLowFg", 0x7E, 0xE0, 0x8F);
+        private static readonly Brush MediumRiskForeground = Themed("RiskMedFg", 0xF0, 0xC6, 0x74);
+        private static readonly Brush HighRiskForeground = Themed("RiskHighFg", 0xFF, 0x9A, 0x94);
 
-        private static SolidColorBrush Frozen(byte r, byte g, byte b)
+        /// <summary>Pincel do tema (App.xaml); o fallback cobre uso fora do aplicativo.</summary>
+        private static Brush Themed(string key, byte r, byte g, byte b)
         {
+            if (Application.Current?.TryFindResource(key) is Brush themed)
+                return themed;
+
             var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
             brush.Freeze();
             return brush;

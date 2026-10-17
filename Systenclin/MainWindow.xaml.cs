@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -467,14 +468,24 @@ public partial class MainWindow : Window
         {
             var root = Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\";
             var drive = new DriveInfo(root);
-            if (!drive.IsReady) { FreeSpaceText.Text = string.Empty; return; }
+            if (!drive.IsReady)
+            {
+                FreeSpaceText.Text = string.Empty;
+                DiskUsageGauge.Value = 0;
+                return;
+            }
 
             double used = (double)(drive.TotalSize - drive.AvailableFreeSpace) / drive.TotalSize * 100;
+            DiskUsageGauge.Value = used;
             FreeSpaceText.Text =
                 $"{drive.Name}  {CleanableItem.FormatBytes(drive.AvailableFreeSpace)} livres de " +
                 $"{CleanableItem.FormatBytes(drive.TotalSize)}  ({used:F0}% em uso)";
         }
-        catch { FreeSpaceText.Text = string.Empty; }
+        catch
+        {
+            FreeSpaceText.Text = string.Empty;
+            DiskUsageGauge.Value = 0;
+        }
     }
 
     private void ShowOutcome(long freed, int failedCount, IEnumerable<string> reasons)
@@ -513,5 +524,45 @@ public partial class MainWindow : Window
         if (_langInit || sender is not RadioButton radio || radio.Tag is not string code) return;
         Loc.Set(code);
     }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  Chrome escuro (barra de título)
+    // ════════════════════════════════════════════════════════════════════════
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        ApplyDarkTitleBar();
+    }
+
+    /// <summary>
+    /// Ativa a barra de título escura pelo atributo do DWM (Windows 10 1809+).
+    /// Em versões sem suporte o app mantém a barra padrão — nada de
+    /// AllowsTransparency nem chrome customizado.
+    /// </summary>
+    private void ApplyDarkTitleBar()
+    {
+        try
+        {
+            var build = Environment.OSVersion.Version.Build;
+            if (build < 17763) return;
+
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            if (hwnd == IntPtr.Zero) return;
+
+            // Atributo 19: 1809–1909. Atributo 20: 2004+ / Windows 11.
+            var attribute = build >= 18985 ? 20 : 19;
+            var enabled = 1;
+            _ = DwmSetWindowAttribute(hwnd, attribute, ref enabled, sizeof(int));
+        }
+        catch
+        {
+            // Sem DWM (ou versão sem suporte): mantém a barra padrão.
+        }
+    }
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(
+        IntPtr hwnd, int attribute, ref int value, int size);
 
 }

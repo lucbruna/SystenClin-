@@ -393,6 +393,9 @@ public partial class MainWindow : Window
         long allBytes = rows.Sum(r => r.ItemSizeBytes);
         int records = selected.Sum(r => r.ItemRecordCount);
 
+        // Medidor do painel de resultado: fração (em bytes) já selecionada.
+        SelectionGauge.Value = allBytes > 0 ? (double)bytes / allBytes * 100.0 : 0.0;
+
         SelectionSummary.Text = selected.Count == 0
             ? $"Nada selecionado — {rows.Count} item(ns) disponíveis, {CleanableItem.FormatBytes(allBytes)}"
             : IsPrivacyTab

@@ -23,6 +23,7 @@ Windows cleanup and optimization. Built from scratch — **no code, assets, or b
 | **v0.11** | Language selection (PT/EN/ES) + application updates reworked | ✅ done |
 | **v0.12** | Update progress you can actually see (bar + phases + elapsed) | ✅ done |
 | **v0.13** | Power report, app-list backup/restore, local crash logs, automated releases | ✅ done |
+| **v0.14** | Modern UI: navy/neon theme, circular gauges, cleanup pipeline, dark title bar | ✅ done |
 
 ## Run
 
@@ -31,7 +32,7 @@ cd Systenclin
 dotnet run -c Release
 ```
 
-Ready-to-run executable: `dist/Systenclin.exe` (≈ 918 KB + `e_sqlite3.dll`),
+Ready-to-run executable: `dist/Systenclin.exe` (≈ 930 KB + `e_sqlite3.dll`),
 single file, requires the .NET Desktop Runtime 10.
 
 Tagged releases (`v*`) are built and published automatically by
@@ -308,6 +309,34 @@ so it survives winget's localized headers and column format changes.
 
 ---
 
+## v0.14 — Modern UI: navy/neon, gauges, and a dark chrome
+
+- **One palette, everywhere** — the deep-navy/neon look now lives in
+  `App.xaml` as named resources (backgrounds, panels, contours, accent,
+  success/warning/risk); the hardcoded colors scattered across earlier
+  versions were all replaced by tokens.
+- **Dark chrome** — the title bar goes dark via `DwmSetWindowAttribute`
+  (no custom window chrome, so window behavior is untouched), with dark
+  templates for checkbox, scrollbars, and the ComboBox popup.
+- **Circular gauges** — a reusable `Controls/CircularGauge` shows disk
+  usage in the header and the current selection in the status bar
+  (item count + share of the total), replacing plain text readouts.
+- **Cleanup pipeline** — the footer shows the app's real flow:
+  ANALISAR → REVISAR → LIMPAR → RECUPERAR (localized pt/en/es), with the
+  current stage highlighted.
+- **Visual polish** — cards get 1px neon contours, risk chips become
+  pills, CPU/RAM sparklines get filled areas, and Startup/Applications
+  rows get icon tiles. Glow effects are limited to small static elements;
+  list virtualization (and scrolling) is untouched.
+- Tests still cover behavior only (the 130 checks do not look at XAML);
+  the visuals are verified through `dist/capture-screenshots.ps1`.
+
+| Startup rows — icon tiles and state pills | Dark ComboBox popup |
+|---|---|
+| ![Startup rows — icon tiles](docs/screenshots/05-inicializacao.png) | ![Dark ComboBox popup](docs/screenshots/06-combo-escuro.png) |
+
+---
+
 ## What this app does NOT do (on purpose)
 
 - **No kernel driver.** ASC installs two minifilters that intercept file and
@@ -371,6 +400,8 @@ Systenclin/
 │   ├── SecurityReinforce.cs   conservative hardening tweaks
 │   ├── PowerReport.cs         powercfg /energy + /batteryreport (v0.13)
 │   └── CrashLog.cs            local crash reports, rotated (v0.13)
+├── Controls/
+│   └── CircularGauge.xaml     circular gauge, value + caption (v0.14)
 ├── L10n/
 │   ├── Loc.cs                 resource lookup + language change event
 │   ├── Tr.cs                  XAML markup extension (l:Tr.Key)
@@ -396,4 +427,5 @@ dist/                          published Systenclin.exe
 ## Next step
 
 **Next:** code-quality improvements from an ongoing open-source review, then
-further increments as prioritized.
+further increments as prioritized. The winget submission is pending review
+([PR #454912](https://github.com/microsoft/winget-pkgs/pull/454912)).

@@ -366,4 +366,16 @@
   <data name="instala_os_programas_de_um_arquivo_de_backup" xml:space="preserve">
     <value>Installs the apps from a backup file.</value>
   </data>
+  <data name="wf_analisar" xml:space="preserve">
+    <value>ANALYZE</value>
+  </data>
+  <data name="wf_revisar" xml:space="preserve">
+    <value>REVIEW</value>
+  </data>
+  <data name="wf_limpar" xml:space="preserve">
+    <value>CLEAN</value>
+  </data>
+  <data name="wf_recuperar" xml:space="preserve">
+    <value>RECOVER</value>
+  </data>
 </root>
