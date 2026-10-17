@@ -13,9 +13,9 @@
     <Product>Systenclin</Product>
     <AssemblyTitle>Systenclin</AssemblyTitle>
     <Description>Limpeza e otimização do Windows</Description>
-    <Version>0.8.0</Version>
-    <FileVersion>0.8.0.0</FileVersion>
-    <AssemblyVersion>0.8.0.0</AssemblyVersion>
+    <Version>0.13.0</Version>
+    <FileVersion>0.13.0.0</FileVersion>
+    <AssemblyVersion>0.13.0.0</AssemblyVersion>
 
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>

@@ -1,6 +1,10 @@
 # Systenclin
 
+[![CI](https://github.com/lucbruna/SystenClin-/actions/workflows/ci.yml/badge.svg)](https://github.com/lucbruna/SystenClin-/actions/workflows/ci.yml)
+
 Windows cleanup and optimization. Built from scratch — **no code, assets, or branding reused**.
+
+![Systenclin — temporary file cleanup](docs/screenshots/01-arquivos.png)
 
 ## Status
 
@@ -18,6 +22,7 @@ Windows cleanup and optimization. Built from scratch — **no code, assets, or b
 | **v0.10** | Disk health: SMART state + `chkdsk /scan` | ✅ done |
 | **v0.11** | Language selection (PT/EN/ES) + application updates reworked | ✅ done |
 | **v0.12** | Update progress you can actually see (bar + phases + elapsed) | ✅ done |
+| **v0.13** | Power report, app-list backup/restore, local crash logs, automated releases | ✅ done |
 
 ## Run
 
@@ -29,6 +34,12 @@ dotnet run -c Release
 Ready-to-run executable: `dist/Systenclin.exe` (≈ 775 KB + `e_sqlite3.dll`),
 single file, requires the .NET Desktop Runtime 10.
 
+Tagged releases (`v*`) are built and published automatically by
+`.github/workflows/release.yml`: verification harness → publish → zip
+(`Systenclin.exe` + `e_sqlite3.dll`) → SHA-256 → GitHub Release with generated
+notes. Prebuilt zips: see
+[Releases](https://github.com/lucbruna/SystenClin-/releases).
+
 ## Tests
 
 ```bash
@@ -36,7 +47,7 @@ cd Testes/Systenclin.Testes
 dotnet run -c Release
 ```
 
-**121 checks, 0 failures** (119 when elevated). The focus is on what can
+**130 checks, 0 failures** (128 when elevated). The focus is on what can
 dangerously go wrong, not pretty coverage. The harness compiles `Core/*.cs`
 directly — no UI — and uses the desktop framework only for the boot-event
 EventLog.
@@ -264,6 +275,39 @@ so it survives winget's localized headers and column format changes.
 
 ---
 
+## v0.13 — Power report, app backup, crash logs, and releases
+
+- **Power report** — the Optimization tab generates two `powercfg` reports:
+  `/energy` (60 s trace, requires administrator) and `/batteryreport`, saved as
+  HTML in `%LOCALAPPDATA%\Systenclin\reports` and opened in the browser when
+  done. The 60 s trace is sensitive to concurrent activity, so the operation
+  blocks the other Optimization actions while it runs; it is cancelable, and
+  canceling kills the `powercfg` process tree.
+- **App-list backup (winget export/import)** — the Applications toolbar gains
+  *Export list* and *Import list*: the installed-package list is exported to a
+  JSON file (`--include-versions`, so a new machine can restore exact
+  versions), and a backup can be restored later. Restore uses
+  `--ignore-unavailable` (a package that no longer exists is skipped instead of
+  aborting the whole restore) and shows the same live phase line as updates
+  (baixando / instalando), cancelable mid-run.
+- **Local crash logs** — the three global handlers (UI thread, fatal, unobserved
+  task) write a full report — timestamp, app version, OS/.NET, context, and the
+  exception chain with stack traces — to
+  `%LOCALAPPDATA%\Systenclin\crashlogs\crash-YYYYMMDD-HHMMSS.log`, rotated to
+  keep the 20 newest files; the error dialog points to the file.
+- **Automated releases** — pushing a `v*` tag runs the harness, publishes the
+  app, zips `Systenclin.exe` + `e_sqlite3.dll`, hashes it (SHA-256), and creates
+  the GitHub Release with generated notes.
+- Tests: section 15 (powercfg arguments + path guards), section 16 (winget
+  export/import arguments, path guards, missing-file refusal), section 17
+  (crash report content, file writing, log rotation).
+
+| Power report | App-list backup |
+|---|---|
+| ![Power report](docs/screenshots/03-otimizacao.png) | ![App-list backup](docs/screenshots/04-aplicativos.png) |
+
+---
+
 ## What this app does NOT do (on purpose)
 
 - **No kernel driver.** ASC installs two minifilters that intercept file and
@@ -324,26 +368,28 @@ Systenclin/
 │   ├── RegistryCleaner.cs     orphaned entries + MRU, each backed up
 │   ├── SafeFolder.cs          ACL-restricted folder
 │   ├── SecureDelete.cs        DoD 5220.22-M shredding (3 passes)
-│   └── SecurityReinforce.cs   conservative hardening tweaks
+│   ├── SecurityReinforce.cs   conservative hardening tweaks
+│   ├── PowerReport.cs         powercfg /energy + /batteryreport (v0.13)
+│   └── CrashLog.cs            local crash reports, rotated (v0.13)
 ├── L10n/
 │   ├── Loc.cs                 resource lookup + language change event
 │   ├── Tr.cs                  XAML markup extension (l:Tr.Key)
 │   └── Strings*.resx          PT (neutral) / EN / ES resources
 ├── MainWindow.xaml            eight-tab interface
 ├── MainWindow.xaml.cs         fields, constructor, shared plumbing
-├── MainWindow.Apps.cs         updates and uninstall (winget)
+├── MainWindow.Apps.cs         updates, backup/restore, uninstall (winget)
 ├── MainWindow.Bin.cs          recycle bin and processes
 ├── MainWindow.Duplicates.cs   duplicates
 ├── MainWindow.Files.cs        scan, clean, backups, history
 ├── MainWindow.LargeFiles.cs   large files
 ├── MainWindow.Network.cs      adapters + renew/ARP
-├── MainWindow.Optimize.cs     memory, disk, WinSxS, disk health, boosts
+├── MainWindow.Optimize.cs     memory, disk, WinSxS, disk health, boosts, power reports
 ├── MainWindow.Rows.cs         row builders shared across tabs
 ├── MainWindow.Shortcuts.cs    broken shortcuts
 ├── MainWindow.Space.cs        space analysis + treemap
 └── app.manifest               asInvoker (no admin by default)
 
-Testes/Systenclin.Testes/      the 121 checks (119 when elevated; compiles Core directly)
+Testes/Systenclin.Testes/      the 130 checks (128 when elevated; compiles Core directly)
 dist/                          published Systenclin.exe
 ```
 

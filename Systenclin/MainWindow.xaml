@@ -1090,6 +1090,53 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Relatório de energia -->
+                        <Border Background="{StaticResource PanelAlt}"
+                                BorderBrush="{StaticResource Line}" BorderThickness="1"
+                                CornerRadius="10" Padding="18,16" Margin="0,14,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Relatório de energia" l:Tr.Key="relatorio_de_energia"
+                                           FontSize="14.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Fg}" />
+                                <TextBlock
+                                    Text="Relatórios de consumo (powercfg /energy, 60 s) e da bateria, salvos como HTML." l:Tr.Key="relatorios_de_consumo_e_bateria_html"
+                                    FontSize="12.5" Foreground="{StaticResource Dim}"
+                                    TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Button x:Name="PowerEnergyButton" Content="Gerar relatório de energia (60 s)" l:Tr.Key="gerar_relatorio_de_energia_60_s"
+                                            Style="{StaticResource PrimaryButton}"
+                                            Padding="14,7" FontSize="12.5"
+                                            ToolTip="Exige administrador" l:Tr.TipKey="exige_administrador"
+                                            ToolTipService.ShowOnDisabled="True"
+                                            Click="PowerEnergy_Click" />
+                                    <Button x:Name="PowerBatteryButton" Content="Relatório de bateria" l:Tr.Key="relatorio_de_bateria"
+                                            Style="{StaticResource GhostButton}"
+                                            Padding="14,7" FontSize="12.5" Margin="10,0,0,0"
+                                            Click="PowerBattery_Click" />
+                                    <Button x:Name="PowerOpenFolderButton" Content="Abrir pasta dos relatórios" l:Tr.Key="abrir_pasta_dos_relatorios"
+                                            Style="{StaticResource GhostButton}"
+                                            Padding="14,7" FontSize="12.5" Margin="10,0,0,0"
+                                            Click="PowerOpenFolder_Click" />
+                                </StackPanel>
+                                <ProgressBar x:Name="PowerProgress" Height="4"
+                                             IsIndeterminate="True"
+                                             Background="{StaticResource Bg}"
+                                             Foreground="{StaticResource Accent}"
+                                             BorderThickness="0" Margin="0,14,0,0"
+                                             Visibility="Collapsed" />
+                                <TextBlock x:Name="PowerStatus" FontSize="12.5"
+                                           Foreground="{StaticResource Dim}"
+                                           TextWrapping="Wrap" Margin="0,10,0,0"
+                                           Visibility="Collapsed" />
+                                <Button x:Name="PowerCancelButton" Content="Cancelar" l:Tr.Key="cancelar"
+                                        Style="{StaticResource GhostButton}"
+                                        HorizontalAlignment="Left" Margin="0,10,0,0"
+                                        Padding="14,7" FontSize="12.5"
+                                        Visibility="Collapsed"
+                                        Click="PowerCancel_Click" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Processos -->
                         <Border Background="{StaticResource PanelAlt}"
                                 BorderBrush="{StaticResource Line}" BorderThickness="1"
@@ -1594,6 +1641,8 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Column="0" x:Name="AppsStatusText"
@@ -1602,7 +1651,27 @@
                                        TextTrimming="CharacterEllipsis"
                                        Margin="0,0,12,0" />
 
-                            <Button Grid.Column="1" x:Name="AppsCancelButton"
+                            <Button Grid.Column="1" x:Name="AppsExportButton"
+                                    Content="Exportar lista" l:Tr.Key="exportar_lista"
+                                    Style="{StaticResource GhostButton}"
+                                    Padding="14,7" FontSize="12.5"
+                                    Margin="0,0,10,0"
+                                    ToolTip="Salva a lista de programas instalados em um arquivo JSON." l:Tr.TipKey="exporta_a_lista_de_programas_instalados_em_json"
+                                    ToolTipService.ShowOnDisabled="True"
+                                    IsEnabled="False"
+                                    Click="AppsExport_Click" />
+
+                            <Button Grid.Column="2" x:Name="AppsImportButton"
+                                    Content="Importar lista" l:Tr.Key="importar_lista"
+                                    Style="{StaticResource GhostButton}"
+                                    Padding="14,7" FontSize="12.5"
+                                    Margin="0,0,10,0"
+                                    ToolTip="Instala os programas de um arquivo de backup." l:Tr.TipKey="instala_os_programas_de_um_arquivo_de_backup"
+                                    ToolTipService.ShowOnDisabled="True"
+                                    IsEnabled="False"
+                                    Click="AppsImport_Click" />
+
+                            <Button Grid.Column="3" x:Name="AppsCancelButton"
                                     Content="Cancelar" l:Tr.Key="cancelar"
                                     Style="{StaticResource GhostButton}"
                                     Padding="14,7" FontSize="12.5"
@@ -1610,7 +1679,7 @@
                                     Visibility="Collapsed"
                                     Click="AppsCancel_Click" />
 
-                            <Button Grid.Column="2" x:Name="AppsScanButton"
+                            <Button Grid.Column="4" x:Name="AppsScanButton"
                                     Content="Procurar atualizações" l:Tr.Key="procurar_atualizacoes"
                                     Style="{StaticResource PrimaryButton}"
                                     Padding="16,8" FontSize="12.5"
@@ -2305,7 +2374,7 @@
                 <TextBlock Grid.Column="0" x:Name="FooterText"
                            FontSize="11.5" Foreground="{StaticResource Dim}"
                            VerticalAlignment="Center" TextWrapping="Wrap"
-                           Text="Systenclin 0.8 — arquivos vão para a Lixeira; dados de navegador têm backup automático." l:Tr.Key="systenclin_0_8_arquivos_vao_para_a_lixeira_dados" />
+                           Text="Systenclin 0.13 — arquivos vão para a Lixeira; dados de navegador têm backup automático." l:Tr.Key="systenclin_0_8_arquivos_vao_para_a_lixeira_dados" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal"
                             HorizontalAlignment="Right" VerticalAlignment="Center"
                             Margin="0,0,14,0">

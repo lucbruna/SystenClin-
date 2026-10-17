@@ -903,6 +903,83 @@ else
     Console.WriteLine("\n14. [smoke] winget real — pulado (SYSTENCLIN_WINGET_SMOKE=1 para rodar)");
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+Section("15. Relatório de energia (powercfg)");
+// ══════════════════════════════════════════════════════════════════════════
+
+Check("argumentos do /energy rejeitam aspas, controle e vazio",
+    PowerReport.BuildEnergyArguments("C:\\x\\a\".html") is null
+    && PowerReport.BuildEnergyArguments("C:\\x\\a\nb.html") is null
+    && PowerReport.BuildEnergyArguments("   ") is null);
+
+Check("argumentos do /energy no formato esperado",
+    PowerReport.BuildEnergyArguments("C:\\x\\energia.html")
+        == "powercfg /energy /duration 60 /output \"C:\\x\\energia.html\"");
+
+Check("argumentos do /batteryreport no formato esperado (com guarda)",
+    PowerReport.BuildBatteryArguments("C:\\x\\bateria.html")
+        == "powercfg /batteryreport /output \"C:\\x\\bateria.html\""
+    && PowerReport.BuildBatteryArguments("C:\\x\\a\"b.html") is null);
+
+// ══════════════════════════════════════════════════════════════════════════
+Section("16. Backup de aplicativos (winget export/import)");
+// ══════════════════════════════════════════════════════════════════════════
+
+Check("export: formato esperado",
+    AppUpdater.BuildExportArguments("C:\\x\\apps.json")
+        == "export --output \"C:\\x\\apps.json\" --include-versions --accept-source-agreements --disable-interactivity");
+
+Check("export/import: rejeitam caminho com aspas, controle ou vazio",
+    AppUpdater.BuildExportArguments("C:\\x\\a\".json") is null
+    && AppUpdater.BuildExportArguments("C:\\x\\a\nb.json") is null
+    && AppUpdater.BuildExportArguments("  ") is null
+    && AppUpdater.BuildImportArguments("C:\\x\\a\"b.json") is null
+    && AppUpdater.BuildImportArguments("") is null);
+
+Check("import: formato esperado e recusa de arquivo inexistente",
+    AppUpdater.BuildImportArguments("C:\\x\\apps.json")
+        == "import --import-file \"C:\\x\\apps.json\" --ignore-unavailable --accept-package-agreements --accept-source-agreements --disable-interactivity"
+    && !AppUpdater.Import("C:\\nao\\existe\\apps-zzz.json").Success);
+
+// ══════════════════════════════════════════════════════════════════════════
+Section("17. Log de erro local (crashlog)");
+// ══════════════════════════════════════════════════════════════════════════
+
+var crashDir = Path.Combine(Path.GetTempPath(), "systenclin-crashtest-" + Guid.NewGuid().ToString("N")[..8]);
+
+try
+{
+    var boom = new InvalidOperationException("falha de teste", new TimeoutException("causa interna"));
+    var report = CrashLog.BuildReport("contexto de teste", boom, new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc), "9.9.9.9");
+
+    Check("relatório contém contexto, versão, tipo, mensagem, pilha e causa encadeada",
+        report.Contains("contexto de teste")
+        && report.Contains("9.9.9.9")
+        && report.Contains("2026-01-02")
+        && report.Contains(nameof(InvalidOperationException))
+        && report.Contains("falha de teste")
+        && report.Contains(nameof(TimeoutException))
+        && report.Contains("causa interna"));
+
+    var written = CrashLog.Write("teste de gravação", boom, crashDir);
+    Check("grava o log em arquivo e devolve o caminho",
+        written is not null && File.Exists(written) && File.ReadAllText(written).Contains("teste de gravação"));
+
+    // Rotação: 1 log real + 25 fabricados = 26 -> sobra 20, apaga 6.
+    for (var i = 0; i < 25; i++)
+        File.WriteAllText(Path.Combine(crashDir, $"crash-20250101-0000{i:00}.log"), "x");
+
+    var pruned = CrashLog.PruneOld(crashDir, 20);
+    var remaining = Directory.GetFiles(crashDir, "crash-*.log").Length;
+
+    Check("rotação mantém só os 20 mais recentes",
+        pruned == 6 && remaining == 20);
+}
+finally
+{
+    try { Directory.Delete(crashDir, recursive: true); } catch { }
+}
+
 Console.WriteLine("\n" + new string('─', 66));
 Console.WriteLine($"  {passed} passaram · {failed} falharam");
 Console.WriteLine(new string('─', 66));

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 
 namespace Systenclin.Core;
@@ -121,6 +122,81 @@ public static class AppUpdater
 
         return RunAction(arguments, ct, onLine);
     }
+
+    // ── Backup de programas (winget export/import) ──────────────────────
+
+    /// <summary>
+    /// Argumentos do "winget export" (backup da lista instalada, com versões);
+    /// null quando o caminho é inválido para virar linha de comando.
+    /// </summary>
+    public static string? BuildExportArguments(string outputPath)
+    {
+        if (!IsSafePath(outputPath))
+            return null;
+
+        return $"export --output \"{outputPath}\" --include-versions --accept-source-agreements --disable-interactivity";
+    }
+
+    /// <summary>
+    /// Argumentos do "winget import" (restauração do backup); null quando o
+    /// caminho é inválido. Pacotes indisponíveis são ignorados em vez de
+    /// interromper a restauração inteira.
+    /// </summary>
+    public static string? BuildImportArguments(string importPath)
+    {
+        if (!IsSafePath(importPath))
+            return null;
+
+        return $"import --import-file \"{importPath}\" --ignore-unavailable --accept-package-agreements --accept-source-agreements --disable-interactivity";
+    }
+
+    /// <summary>Exporta a lista de programas instalados para um arquivo JSON. Nunca lança.</summary>
+    public static WingetActionResult Export(string outputPath, CancellationToken ct = default, Action<string>? onLine = null)
+    {
+        var arguments = BuildExportArguments(outputPath);
+        if (arguments is null)
+            return new WingetActionResult(false, "Caminho do arquivo de backup inválido.", null);
+
+        // O winget não cria a pasta de destino: garante a pasta antes de rodar.
+        try
+        {
+            var dir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+        }
+        catch (Exception ex)
+        {
+            return new WingetActionResult(false, $"Não foi possível preparar a pasta do backup: {ex.Message}", null);
+        }
+
+        var result = RunAction(arguments, ct, onLine);
+
+        // Exit code 0 sem arquivo não é backup: exigir o arquivo evita anunciar
+        // um backup que não existe.
+        if (result.Success && !File.Exists(outputPath))
+            return new WingetActionResult(false, "O winget terminou sem criar o arquivo de backup.", result.Output);
+
+        return result;
+    }
+
+    /// <summary>Instala e atualiza os programas de um backup JSON. Nunca lança.</summary>
+    public static WingetActionResult Import(string importPath, CancellationToken ct = default, Action<string>? onLine = null)
+    {
+        var arguments = BuildImportArguments(importPath);
+        if (arguments is null)
+            return new WingetActionResult(false, "Caminho do arquivo de backup inválido.", null);
+
+        if (!File.Exists(importPath))
+            return new WingetActionResult(false, "Arquivo de backup não encontrado.", null);
+
+        return RunAction(arguments, ct, onLine);
+    }
+
+    /// <summary>Caminho seguro para virar argumento: não vazio, sem aspas nem controles.</summary>
+    private static bool IsSafePath(string? path)
+        => !string.IsNullOrWhiteSpace(path)
+        && !path.Contains('"')
+        && !path.Any(char.IsControl);
 
     /// <summary>Executa uma ação do winget e converte exit code/saída em resultado.</summary>
     private static WingetActionResult RunAction(string arguments, CancellationToken ct, Action<string>? onLine = null)

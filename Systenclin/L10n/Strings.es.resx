@@ -328,12 +328,42 @@
     <value>Limpiar seleccionados</value>
   </data>
   <data name="systenclin_0_8_arquivos_vao_para_a_lixeira_dados" xml:space="preserve">
-    <value>Systenclin 0.8 — los archivos van a la Papelera; los datos del navegador tienen copia automática.</value>
+    <value>Systenclin 0.13 — los archivos van a la Papelera; los datos del navegador tienen copia automática.</value>
   </data>
   <data name="backups" xml:space="preserve">
     <value>Copias</value>
   </data>
   <data name="historico" xml:space="preserve">
     <value>Historial</value>
+  </data>
+  <data name="relatorio_de_energia" xml:space="preserve">
+    <value>Informe de energía</value>
+  </data>
+  <data name="relatorios_de_consumo_e_bateria_html" xml:space="preserve">
+    <value>Informes de consumo (powercfg /energy, 60 s) y de la batería, guardados como HTML.</value>
+  </data>
+  <data name="gerar_relatorio_de_energia_60_s" xml:space="preserve">
+    <value>Generar informe de energía (60 s)</value>
+  </data>
+  <data name="relatorio_de_bateria" xml:space="preserve">
+    <value>Informe de batería</value>
+  </data>
+  <data name="abrir_pasta_dos_relatorios" xml:space="preserve">
+    <value>Abrir carpeta de informes</value>
+  </data>
+  <data name="exige_administrador" xml:space="preserve">
+    <value>Requiere administrador</value>
+  </data>
+  <data name="exportar_lista" xml:space="preserve">
+    <value>Exportar lista</value>
+  </data>
+  <data name="importar_lista" xml:space="preserve">
+    <value>Importar lista</value>
+  </data>
+  <data name="exporta_a_lista_de_programas_instalados_em_json" xml:space="preserve">
+    <value>Guarda la lista de programas instalados en un archivo JSON.</value>
+  </data>
+  <data name="instala_os_programas_de_um_arquivo_de_backup" xml:space="preserve">
+    <value>Instala los programas de un archivo de copia de seguridad.</value>
   </data>
 </root>

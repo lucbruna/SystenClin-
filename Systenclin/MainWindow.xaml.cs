@@ -77,6 +77,10 @@ public partial class MainWindow : Window
     private CancellationTokenSource? _scanCts;
     private bool _scanBusy;
 
+    // Relatórios de energia/bateria (powercfg), no cartão "Relatório de energia".
+    private CancellationTokenSource? _powerCts;
+    private bool _powerBusy;
+
     // Processos (aba Otimização): lista e encerramento próprios, sem CTS.
     private bool _procLoaded;
     private bool _procBusy;

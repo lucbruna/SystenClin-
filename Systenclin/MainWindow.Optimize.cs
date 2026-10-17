@@ -772,15 +772,115 @@ public partial class MainWindow : Window
         }
     }
 
+    // ── Relatório de energia (powercfg) ─────────────────────────────────────
+
+    private void PowerCancel_Click(object sender, RoutedEventArgs e)
+    {
+        try { _powerCts?.Cancel(); } catch { }
+    }
+
+    private async void PowerEnergy_Click(object sender, RoutedEventArgs e)
+        => await GenerateReportAsync(energy: true);
+
+    private async void PowerBattery_Click(object sender, RoutedEventArgs e)
+        => await GenerateReportAsync(energy: false);
+
+    /// <summary>
+    /// Gera o relatório de energia (60 s de coleta, exige administrador) ou o
+    /// de bateria, abrindo o HTML no navegador ao terminar. Enquanto roda,
+    /// bloqueia as demais operações de otimização (a coleta do /energy é
+    /// sensível a atividade concorrente).
+    /// </summary>
+    private async Task GenerateReportAsync(bool energy)
+    {
+        if (AnyOptimizeBusy) return;
+
+        _powerBusy = true;
+        SyncBoostEnabled();
+        _powerCts = new CancellationTokenSource();
+        var ct = _powerCts.Token;
+
+        PowerProgress.Visibility = Visibility.Visible;
+        PowerStatus.Visibility = Visibility.Visible;
+        PowerStatus.Text = energy
+            ? "Gerando relatório de energia… a coleta leva 60 s."
+            : "Gerando relatório de bateria…";
+        PowerCancelButton.Visibility = Visibility.Visible;
+
+        try
+        {
+            var result = await Task.Run(() => energy
+                ? PowerReport.GenerateEnergyReport(ct)
+                : PowerReport.GenerateBatteryReport(ct));
+
+            if (result.Success && result.Path is not null)
+            {
+                OpenWithShell(result.Path);
+                PowerStatus.Text = $"Relatório salvo e aberto: {result.Path}";
+            }
+            else
+            {
+                PowerStatus.Text = result.Error ?? "Não foi possível gerar o relatório.";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            PowerStatus.Text = "Geração cancelada.";
+        }
+        catch (Exception ex)
+        {
+            PowerStatus.Text = $"Não foi possível gerar o relatório: {ex.Message}";
+        }
+        finally
+        {
+            PowerProgress.Visibility = Visibility.Collapsed;
+            PowerCancelButton.Visibility = Visibility.Collapsed;
+            _powerBusy = false;
+            SyncBoostEnabled();
+            _powerCts?.Dispose();
+            _powerCts = null;
+        }
+    }
+
+    private void PowerOpenFolder_Click(object sender, RoutedEventArgs e)
+    {
+        PowerStatus.Visibility = Visibility.Visible;
+
+        try
+        {
+            Directory.CreateDirectory(PowerReport.DefaultDir);
+            OpenWithShell(PowerReport.DefaultDir);
+            PowerStatus.Text = $"Pasta dos relatórios: {PowerReport.DefaultDir}";
+        }
+        catch (Exception ex)
+        {
+            PowerStatus.Text = $"Não foi possível abrir a pasta dos relatórios: {ex.Message}";
+        }
+    }
+
+    /// <summary>Abre arquivo ou pasta no shell padrão; falha de associação não quebra a UI.</summary>
+    private static void OpenWithShell(string path)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch
+        {
+            // Sem navegador/pasta associada: o caminho já aparece no status.
+        }
+    }
+
     // ── Aceleração em 1 clique ──────────────────────────────────────────────
 
     /// <summary>Só libera o botão quando nenhuma operação de otimização roda.</summary>
-    private bool AnyOptimizeBusy => _boostBusy || _trimBusy || _dnsBusy || _diskBusy || _netBusy || _scanBusy;
+    private bool AnyOptimizeBusy => _boostBusy || _trimBusy || _dnsBusy || _diskBusy || _netBusy || _scanBusy || _powerBusy;
 
     /// <summary>
-    /// Sincroniza o estado dos botões da aba Otimização: Boost, rede e a
-    /// verificação de volume ficam desabilitados durante qualquer operação;
-    /// as ações que exigem administrador só habilitam com o programa elevado.
+    /// Sincroniza o estado dos botões da aba Otimização: Boost, rede, a
+    /// verificação de volume e os relatórios ficam desabilitados durante
+    /// qualquer operação; as ações que exigem administrador só habilitam com
+    /// o programa elevado.
     /// </summary>
     private void SyncBoostEnabled()
     {
@@ -790,6 +890,8 @@ public partial class MainWindow : Window
         NetRenewButton.IsEnabled = idle && _elevated;
         NetArpButton.IsEnabled = idle && _elevated;
         DiskScanButton.IsEnabled = idle && _elevated;
+        PowerEnergyButton.IsEnabled = idle && _elevated;
+        PowerBatteryButton.IsEnabled = idle;
     }
 
     /// <summary>

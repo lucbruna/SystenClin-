@@ -53,41 +53,41 @@ public partial class App : Application
         }
     }
 
-    /// <summary>Erro na thread da interface: avisa e mantém o aplicativo vivo.</summary>
+    /// <summary>Erro na thread da interface: registra em arquivo, avisa e mantém o aplicativo vivo.</summary>
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        try
-        {
-            MessageBox.Show($"Ocorreu um erro inesperado:\n\n{e.Exception.Message}",
-                "Systenclin", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        catch { }
+        var path = CrashLog.Write("erro na interface (DispatcherUnhandledException)", e.Exception);
+        ShowCrash("Ocorreu um erro inesperado", e.Exception, path);
 
         e.Handled = true;
     }
 
-    /// <summary>Erro fatal fora da thread da interface: avisa; o encerramento não pode ser evitado.</summary>
+    /// <summary>Erro fatal fora da thread da interface: registra e avisa; o encerramento não pode ser evitado.</summary>
     private void OnDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
-        try
-        {
-            var message = (e.ExceptionObject as Exception)?.Message ?? "Erro desconhecido.";
-            MessageBox.Show($"Ocorreu um erro fatal:\n\n{message}",
-                "Systenclin", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        catch { }
+        var ex = e.ExceptionObject as Exception;
+        var path = ex is null ? null : CrashLog.Write("erro fatal (AppDomain.UnhandledException)", ex);
+        ShowCrash("Ocorreu um erro fatal", ex, path);
     }
 
-    /// <summary>Tarefa falha sem observador: marca como observada para não derrubar o aplicativo.</summary>
+    /// <summary>Tarefa falha sem observador: registra, avisa e marca como observada.</summary>
     private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        var path = CrashLog.Write("erro em segundo plano (TaskScheduler.UnobservedTaskException)", e.Exception);
+        ShowCrash("Ocorreu um erro em segundo plano", e.Exception, path);
+
+        e.SetObserved();
+    }
+
+    /// <summary>Aviso de erro com o caminho do log anexado; falha do aviso não propaga.</summary>
+    private static void ShowCrash(string title, Exception? ex, string? logPath)
     {
         try
         {
-            MessageBox.Show($"Ocorreu um erro em segundo plano:\n\n{e.Exception.Message}",
+            var details = logPath is null ? "" : $"\n\nDetalhes salvos em:\n{logPath}";
+            MessageBox.Show($"{title}:\n\n{ex?.Message ?? "Erro desconhecido."}{details}",
                 "Systenclin", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         catch { }
-
-        e.SetObserved();
     }
 }

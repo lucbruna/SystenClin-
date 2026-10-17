@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Run core verification harness
+        run: dotnet run -c Release --project Testes/Systenclin.Testes/Systenclin.Testes.csproj
+
+      - name: Publish
+        run: dotnet publish Systenclin/Systenclin.csproj -c Release -o publish
+
+      - name: Package
+        shell: pwsh
+        run: |
+          Copy-Item publish/Systenclin.exe publish/e_sqlite3.dll .
+          $zip = "Systenclin-${{ github.ref_name }}-win-x64.zip"
+          Compress-Archive -Path Systenclin.exe, e_sqlite3.dll -DestinationPath $zip
+          (Get-FileHash $zip -Algorithm SHA256).Hash | Out-File "$zip.sha256" -Encoding ascii
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $zip = "Systenclin-${{ github.ref_name }}-win-x64.zip"
+          gh release create "${{ github.ref_name }}" `
+            $zip `
+            "$zip.sha256" `
+            --title "Systenclin ${{ github.ref_name }}" `
+            --generate-notes

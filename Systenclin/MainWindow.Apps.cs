@@ -95,6 +95,8 @@ public partial class MainWindow : Window
         {
             _appsLoading = false;
             AppsScanButton.IsEnabled = _wingetAvailable && !_appsBusy;
+            AppsExportButton.IsEnabled = _wingetAvailable && !_appsBusy;
+            AppsImportButton.IsEnabled = _wingetAvailable && !_appsBusy;
         }
     }
 
@@ -354,12 +356,168 @@ public partial class MainWindow : Window
         AppsSummary.ToolTip = details.Count == 0 ? null : string.Join(Environment.NewLine, details);
     }
 
+    // ── Backup da lista de aplicativos (winget export/import) ──────────────
+
+    private async void AppsExport_Click(object sender, RoutedEventArgs e)
+    {
+        if (_appsBusy || _uninsBusy || !_wingetAvailable) return;
+
+        var dialog = new SaveFileDialog
+        {
+            Title = "Salvar backup dos aplicativos",
+            FileName = $"apps-{DateTime.Now:yyyyMMdd}.json",
+            DefaultExt = ".json",
+            Filter = "Backup de aplicativos (*.json)|*.json",
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+        };
+
+        if (dialog.ShowDialog(this) != true) return;
+
+        _appsBusy = true;
+        _appsCts = new CancellationTokenSource();
+        var ct = _appsCts.Token;
+
+        SetAppsBusyUi(true);
+        AppsProgress.IsIndeterminate = true;
+        AppsStatusText.Text = "Exportando a lista de aplicativos…";
+
+        string message;
+        string? details = null;
+
+        try
+        {
+            var path = dialog.FileName;
+            var result = await Task.Run(() => AppUpdater.Export(path, ct));
+
+            if (result.Success)
+            {
+                message = $"Lista exportada: {path}";
+            }
+            else if (ct.IsCancellationRequested)
+            {
+                message = "Exportação cancelada.";
+            }
+            else
+            {
+                message = result.Error ?? "Não foi possível exportar a lista.";
+                details = result.Output;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            message = "Exportação cancelada.";
+        }
+        catch (Exception ex)
+        {
+            message = $"Não foi possível exportar a lista: {ex.Message}";
+        }
+        finally
+        {
+            _appsBusy = false;
+            _appsCts?.Dispose();
+            _appsCts = null;
+            SetAppsBusyUi(false);
+        }
+
+        AppsStatusText.Text = "";
+        AppsSummary.Text = message;
+        AppsSummary.ToolTip = details;
+    }
+
+    private async void AppsImport_Click(object sender, RoutedEventArgs e)
+    {
+        if (_appsBusy || _uninsBusy || !_wingetAvailable) return;
+
+        var dialog = new OpenFileDialog
+        {
+            Title = "Escolher backup dos aplicativos",
+            Filter = "Backup de aplicativos (*.json)|*.json",
+            DefaultExt = ".json",
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+        };
+
+        if (dialog.ShowDialog(this) != true) return;
+
+        var confirm = MessageBox.Show(this,
+            "Isso instala e atualiza os aplicativos listados no backup, um a um.\n\nContinuar?",
+            "Restaurar backup de aplicativos",
+            MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (confirm != MessageBoxResult.OK) return;
+
+        _appsBusy = true;
+        _appsCts = new CancellationTokenSource();
+        var ct = _appsCts.Token;
+
+        SetAppsBusyUi(true);
+        AppsProgress.IsIndeterminate = true;
+        SetAppsPhase("Restaurando backup");
+
+        string message;
+        bool reload = false;
+        string? details = null;
+
+        try
+        {
+            var result = await Task.Run(() => AppUpdater.Import(dialog.FileName, ct, LinePhaseCallback()));
+
+            if (result.Success)
+            {
+                reload = true;
+                message = "Backup restaurado.";
+            }
+            else if (ct.IsCancellationRequested)
+            {
+                message = "Operação cancelada.";
+            }
+            else
+            {
+                message = result.Error ?? "Não foi possível restaurar o backup.";
+                var hint = AppUpdater.FirstErrorLine(result.Output);
+                if (hint is not null)
+                    message += $" {hint}";
+                details = result.Output;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            message = "Operação cancelada.";
+        }
+        catch (Exception ex)
+        {
+            message = $"Não foi possível restaurar o backup: {ex.Message}";
+        }
+        finally
+        {
+            _appsBusy = false;
+            _appsCts?.Dispose();
+            _appsCts = null;
+        }
+
+        if (reload)
+        {
+            SetAppsPhase(null);
+
+            // A lista precisa refletir a realidade depois da restauração.
+            await LoadAppsAsync(message);
+        }
+        else
+        {
+            SetAppsPhase(null);
+            AppsStatusText.Text = "";
+            AppsSummary.Text = message;
+            AppsSummary.ToolTip = details;
+            SetAppsBusyUi(false);
+        }
+    }
+
     private void SetAppsBusyUi(bool busy)
     {
         AppsProgress.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         AppsCancelButton.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         AppsScanButton.IsEnabled = !busy && _wingetAvailable;
         AppsUpdateAllButton.IsEnabled = !busy && _appRows.Count > 0;
+        AppsExportButton.IsEnabled = !busy && _wingetAvailable;
+        AppsImportButton.IsEnabled = !busy && _wingetAvailable;
 
         // Nada de IsEnabled na lista: o estado desabilitado do ListBox pinta cores
         // de tema fora da paleta escura (fundo claro, texto ilegível). Bloquear o
