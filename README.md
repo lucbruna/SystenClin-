@@ -14,6 +14,8 @@ Windows cleanup and optimization. Built from scratch — **no code, assets, or b
 | **v0.6** | Applications: update and uninstall (winget) | ✅ done |
 | **v0.7** | Restore point + undo (Recycle Bin, backups, history) | ✅ done |
 | **v0.8** | Extras: broken shortcuts, recycle bin, status bar, 1-click boost, conservative network | ✅ done |
+| **v0.9** | Windows tools: WinSxS, traces, secure delete, hardening, drivers, registry clean, scheduling, safe folder | ✅ done |
+| **v0.10** | Disk health: SMART state + `chkdsk /scan` | ✅ done |
 
 ## Run
 
@@ -32,9 +34,10 @@ cd Testes/Systenclin.Testes
 dotnet run -c Release
 ```
 
-**62 checks, 0 failures.** The focus is on what can go dangerously wrong, not
-pretty coverage. The harness compiles `Core/*.cs` directly — no UI — and uses
-the desktop framework only for the boot-event EventLog.
+**107 checks, 0 failures** (105 when elevated). The focus is on what can
+dangerously go wrong, not pretty coverage. The harness compiles `Core/*.cs`
+directly — no UI — and uses the desktop framework only for the boot-event
+EventLog.
 
 ---
 
@@ -181,6 +184,38 @@ so it survives winget's localized headers and column format changes.
   require administrator. Conservative on purpose: no TCP/registry tweaks, no
   winsock reset.
 
+## v0.9 — Windows tools
+
+- **WinSxS cleanup** — `dism /Online /Cleanup-Image /StartComponentCleanup` on
+  the Optimization tab; a deep mode also removes the rollback base
+  (`/ResetBase`).
+- **Trace cleanup** — recent files, jump lists, and prefetch.
+- **Browser disk cache** — the disk caches of Chrome, Edge, Firefox, Brave,
+  Opera, and Vivaldi are scanned as a cleanup category.
+- **Secure delete** — DoD 5220.22-M shredding (3 passes). On SSDs the overwrite
+  is not guaranteed to reach the physical medium; full benefit is on HDDs.
+- **Security hardening** — conservative tweaks (Remote Registry, Autorun,
+  administrative shares, weak authentication); nothing in user data is touched.
+- **Driver cleanup** — `pnputil` removal of old driver versions no device uses;
+  the newest package of each provider/class and every in-use driver are kept.
+- **Registry clean** — orphaned uninstall entries and file MRUs only, each key
+  backed up before removal; system keys are never touched.
+- **Quick settings** — independent, reversible Windows UX/perf toggles.
+- **Scheduled clean** — a Windows task runs `Systenclin.exe --headless-clean`
+  at a chosen interval.
+- **Auto RAM clean** — in-app timer for the memory trim.
+- **Safe folder** — a folder restricted by ACL to the current user, SYSTEM,
+  and Administrators.
+- **Treemap** — slice-and-dice view of folder analysis; click to navigate.
+- **Hive size** — informational measurement of the user hive.
+
+## v0.10 — Disk health
+
+- **Health** — SMART-derived state of every physical disk (`Get-PhysicalDisk`):
+  health, operational status, media type, and size.
+- **Volume check** — online filesystem check of the system volume with
+  `chkdsk /scan`; requires administrator and is cancelable.
+
 ---
 
 ## What this app does NOT do (on purpose)
@@ -189,7 +224,9 @@ so it survives winget's localized headers and column format changes.
   registry I/O. None of that here.
 - **No resident service.** Nothing runs in the background.
 - **No silent install.** No `Auto` services without warning.
-- **No registry cleaner.** Risk out of proportion to the gain; left out.
+- **No aggressive registry cleaning.** Uninstall leftovers and MRU lists only,
+  each key backed up before removal; system keys are never touched.
+- **No registry defrag.** Risk out of proportion to the gain; left out.
 - **No cross-selling.** Does not push other products.
 
 ---
@@ -206,6 +243,7 @@ Systenclin/
 │   ├── DirectoryMeasurer.cs   measures a tree without following links
 │   ├── Scanner.cs             file scan
 │   ├── Cleaner.cs             cleanup + send to Recycle Bin
+│   ├── ShellRecycle.cs        send to Recycle Bin (SHFileOperation)
 │   ├── FileDeleter.cs         permanent removal of cache folders
 │   ├── CleanLog.cs            history in JSON
 │   ├── — privacy (v0.2)
@@ -230,11 +268,31 @@ Systenclin/
 │   ├── FolderAnalyzer.cs      what takes up space, folder by folder
 │   ├── ShortcutFixer.cs       broken shortcuts
 │   ├── AppUpdater.cs          updates via winget
-│   └── AppUninstaller.cs      uninstall via winget
+│   ├── AppUninstaller.cs      uninstall via winget
+│   ├── — Windows tools (v0.9+)
+│   ├── AutoCleanScheduler.cs  scheduled clean via Task Scheduler
+│   ├── DiskHealth.cs          SMART state + chkdsk /scan
+│   ├── DriverCleaner.cs       removes unused driver packages (pnputil)
+│   ├── QuickSettings.cs       independent, reversible Windows toggles
+│   ├── RegistryCleaner.cs     orphaned entries + MRU, each backed up
+│   ├── SafeFolder.cs          ACL-restricted folder
+│   ├── SecureDelete.cs        DoD 5220.22-M shredding (3 passes)
+│   └── SecurityReinforce.cs   conservative hardening tweaks
 ├── MainWindow.xaml            eight-tab interface
+├── MainWindow.xaml.cs         fields, constructor, shared plumbing
+├── MainWindow.Apps.cs         updates and uninstall (winget)
+├── MainWindow.Bin.cs          recycle bin and processes
+├── MainWindow.Duplicates.cs   duplicates
+├── MainWindow.Files.cs        scan, clean, backups, history
+├── MainWindow.LargeFiles.cs   large files
+├── MainWindow.Network.cs      adapters + renew/ARP
+├── MainWindow.Optimize.cs     memory, disk, WinSxS, disk health, boosts
+├── MainWindow.Rows.cs         row builders shared across tabs
+├── MainWindow.Shortcuts.cs    broken shortcuts
+├── MainWindow.Space.cs        space analysis + treemap
 └── app.manifest               asInvoker (no admin by default)
 
-Testes/Systenclin.Testes/      the 62 checks (compiles Core directly)
+Testes/Systenclin.Testes/      the 107 checks (105 when elevated; compiles Core directly)
 dist/                          published Systenclin.exe
 ```
 

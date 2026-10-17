@@ -700,6 +700,25 @@ try
         {
             Console.WriteLine("        (elevado: caminho de otimização sem elevação não testável)");
         }
+
+        // ── DiskHealth ────────────────────────────────────────────────────
+        var health = DiskHealth.GetHealth();
+        Check("saúde: consulta devolve discos ou erro amigável",
+            health.Success
+                ? health.Disks.Count > 0 && health.Disks[0].Name.Length > 0
+                : !string.IsNullOrEmpty(health.Error),
+            health.Success ? $"{health.Disks.Count} disco(s)" : health.Error);
+
+        if (!ScanTargets.IsElevated)
+        {
+            var scan = DiskHealth.ScanSystemVolume();
+            Check("saúde: chkdsk sem elevação devolve erro amigável",
+                !scan.Success && !string.IsNullOrEmpty(scan.Error), scan.Error);
+        }
+        else
+        {
+            Console.WriteLine("        (elevado: caminho sem elevação do chkdsk não testável)");
+        }
     }
     finally
     {
